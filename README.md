@@ -1,8 +1,39 @@
-# SimAnalyzer [![Build Status](https://cloud.drone.io/api/badges/Col-E/SimAnalyzer/status.svg)](https://cloud.drone.io/Col-E/SimAnalyzer)
+# SimAnalyzer [![Build Status](https://cloud.drone.io/api/badges/Col-E/SimAnalyzer/status.svg)](https://cloud.drone.io/Col-E/SimAnalyzer) [![](https://jitpack.io/v/Col-E/SimAnalyzer.svg)](https://jitpack.io/#Col-E/SimAnalyzer)
 
 SimAnalyzer is an analyzer that computes the values of primitives and basic objects where possible. 
 
 ## Usage
+
+### Add dependency
+
+Add Jitpack to your repositories
+```xml
+<repositories>
+	<repository>
+	    <id>jitpack.io</id>
+	    <url>https://jitpack.io</url>
+	</repository>
+</repositories>
+```
+```groovy
+allprojects {
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
+	}
+}
+```
+Add SimAnalyzer
+```xml
+<dependency>
+    <groupId>com.github.Col-E</groupId>
+    <artifactId>SimAnalyzer</artifactId>
+    <version>Tag</version>
+</dependency>
+```
+```groovy
+implementation 'com.github.Col-E:SimAnalyzer:Tag'
+```
 
 ### Setup 
 
