@@ -23,16 +23,16 @@ allprojects {
 	}
 }
 ```
-Add SimAnalyzer
+Add SimAnalyzer dependency _(where `VERSION` is the latest version)_
 ```xml
 <dependency>
     <groupId>com.github.Col-E</groupId>
     <artifactId>SimAnalyzer</artifactId>
-    <version>Tag</version>
+    <version>VERSION</version>
 </dependency>
 ```
 ```groovy
-implementation 'com.github.Col-E:SimAnalyzer:Tag'
+implementation 'com.github.Col-E:SimAnalyzer:VERSION'
 ```
 
 ### Setup 
