@@ -12,6 +12,7 @@ steps:
       - name: deps
         path: /root/.m2
     commands:
+      - chmod +x mvnw
       - ./mvnw test -B
 
   - name: build
@@ -20,11 +21,13 @@ steps:
       - name: deps
         path: /root/.m2
     commands:
+      - chmod +x mvnw
       - ./mvnw package -Dmaven.test.skip -Dcheckstyle.skip -B
 
   - name: release
     image: node:13
     commands:
+      - chmod +x mvnw
       - npx semantic-release
     environment:
       GITHUB_TOKEN:

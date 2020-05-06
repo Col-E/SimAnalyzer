@@ -1,8 +1,8 @@
-# SimAnalyzer
+# SimAnalyzer [![Build Status](https://cloud.drone.io/api/badges/Col-E/SimAnalyzer/status.svg)](https://cloud.drone.io/Col-E/SimAnalyzer)
 
 SimAnalyzer is an analyzer that computes the values of primitives and basic objects where possible. 
 
-## Usage
+## Usage 
 
 ### Setup 
 
