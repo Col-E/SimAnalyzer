@@ -2,7 +2,7 @@
 
 SimAnalyzer is an analyzer that computes the values of primitives and basic objects where possible. 
 
-## Usage 
+## Usage
 
 ### Setup 
 
