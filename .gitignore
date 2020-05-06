@@ -1,0 +1,24 @@
+.metadata/**
+.recommenders/**
+.settings/**
+bin/**
+temp/**
+target/**
+plugins/**
+*.psd
+*.dtd
+*.sh
+*.bat
+*.lnk
+
+.classpath
+.project
+
+# IntelliJ IDEA Project stuff
+.idea/
+out/
+*.iws
+*.iml
+*___jb_*___
+/target/
+/bin/
