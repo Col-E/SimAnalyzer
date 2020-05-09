@@ -33,17 +33,4 @@ public class TestCustomLegalClasses extends TestUtils {
 		for (MethodNode mn : node.methods)
 			assertDoesNotThrow(() -> FrameUtil.getFrames(node.name, mn));
 	}
-
-	@ParameterizedTest
-	@ValueSource(strings =  {
-			"bin/custom/misc/JumpOverUnusedCode.class",
-	})
-	public void testClassexs(String classPath) throws AnalyzerException {
-		ClassNode node = getFromName(classPath);
-		for (MethodNode mn : node.methods)
-		{
-			Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, mn);
-			System.out.println(":)");
-		}
-	}
 }

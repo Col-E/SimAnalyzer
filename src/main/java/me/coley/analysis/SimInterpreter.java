@@ -1,9 +1,8 @@
 package me.coley.analysis;
 
-import me.coley.analysis.exception.ResolvableAnalyzerException;
+import me.coley.analysis.exception.ResolvableExceptionFactory;
 import me.coley.analysis.exception.SimFailedException;
-import me.coley.analysis.util.InsnUtil;
-import me.coley.analysis.util.TypeUtil;
+import me.coley.analysis.exception.TypeMismatchKind;
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.NullConstantValue;
 import me.coley.analysis.value.PrimitiveValue;
@@ -27,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.objectweb.asm.Opcodes.*;
+import static me.coley.analysis.util.TypeUtil.*;
 
 /**
  * A modified version of ASM's {@link BasicVerifier} to use {@link AbstractValue}.<br>
@@ -36,6 +36,7 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();
+	private ResolvableExceptionFactory exceptionFactory;
 	private SimAnalyzer analyzer;
 
 	/**
@@ -60,6 +61,14 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	 */
 	public void setAnalyzer(SimAnalyzer analyzer) {
 		this.analyzer = analyzer;
+	}
+
+	/**
+	 * @param exceptionFactory
+	 * 		Factory to generate resolvable exceptions.
+	 */
+	public void setErrorFactory(ResolvableExceptionFactory exceptionFactory) {
+		this.exceptionFactory = exceptionFactory;
 	}
 
 	/**
@@ -379,13 +388,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type fieldType = Type.getType(fin.desc);
 				if (!isSubTypeOf(value.getType(), fieldType))
-					markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
-						// Validate that the argument value is no longer null when stack-frames are filled out
-						Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-						AbstractValue methodContext = frame.getStack(frame.getStackSize() - 1);
-						return isSubTypeOfOrNull(methodContext, fieldType);
-					}, insn, "Expected " +
-							"type: " + fieldType));
+					markBad(insn, exceptionFactory.unexpectedType(fieldType, value.getType(), insn, value, TypeMismatchKind.PUTSTATIC));
 				return null;
 			}
 			case GETFIELD: {
@@ -394,12 +397,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type ownerType = Type.getObjectType(fin.owner);
 				if (!isSubTypeOf(value.getType(), ownerType))
-					markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
-						// Validate that the top of the stack matches the expected type
-						Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-						AbstractValue fieldContext = frame.getStack(frame.getStackSize() - 1);
-						return isSubTypeOf(fieldContext.getType(), ownerType);
-					}, insn, "Expected type: " + fin.owner));
+					markBad(insn, exceptionFactory.unexpectedType(Type.getObjectType(fin.owner),
+							value.getType(), insn, value, TypeMismatchKind.GETFIELD));
 				Type type = Type.getType(fin.desc);
 				return newValue(type);
 			}
@@ -558,8 +557,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				break;
 			case IF_ACMPEQ:
 			case IF_ACMPNE:
-				expected1 = TypeUtil.OBJECT_TYPE;
-				expected2 = TypeUtil.OBJECT_TYPE;
+				expected1 = OBJECT_TYPE;
+				expected2 = OBJECT_TYPE;
 				break;
 			case PUTFIELD:
 				FieldInsnNode fieldInsn = (FieldInsnNode) insn;
@@ -593,7 +592,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				return newValue(Type.DOUBLE_TYPE);
 			case AALOAD:
 				if (value1.getType() == null)
-					return newValue(TypeUtil.OBJECT_TYPE);
+					return newValue(OBJECT_TYPE);
 				else
 					return newValue(Type.getType(value1.getType().getDescriptor().substring(1)));
 			case IALOAD:
@@ -723,7 +722,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				break;
 			case AASTORE:
 				expected1 = value1.getType();
-				expected3 = TypeUtil.OBJECT_TYPE;
+				expected3 = OBJECT_TYPE;
 				break;
 			default:
 				throw new AssertionError();
@@ -762,26 +761,15 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			AbstractValue actual = values.get(i++);
 			if(!isSubTypeOf(actual.getType(), owner) &&
 					!(isMethodAddSuppressed(min) && actual == NullConstantValue.NULL_VALUE))
-				markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
-					// Validate that the owner value is no longer null when stack-frames are filled out
-					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-					// TODO: Validate the stack index is correct here
-					AbstractValue methodContext = frame.getStack(frame.getStackSize() - (args.length + 1));
-					return isSubTypeOf(methodContext.getType(), owner);
-				}, insn, "Method owner does not match type on stack",
-						newValue(owner), values.get(0)));
+				markBad(insn, exceptionFactory.unexpectedMethodHostType(owner, actual.getType(),
+						(MethodInsnNode) insn, actual, values, TypeMismatchKind.INVOKE_HOST_TYPE));
 		}
 		while(i < values.size()) {
 			Type expected = args[j++];
 			AbstractValue actual = values.get(i++);
 			if(!isSubTypeOfOrNull(actual, expected)) {
-				int argIndex = i;
-				markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
-					// Validate that the argument value is no longer null when stack-frames are filled out
-					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-					AbstractValue methodContext = frame.getStack(frame.getStackSize() - (args.length - argIndex + 1));
-					return isSubTypeOfOrNull(methodContext, expected);
-				},insn, "Argument type was \"" + actual + "\" but expected \"" + expected + "\""));
+				markBad(insn, exceptionFactory.unexpectedMethodArgType(expected, actual.getType(),
+						insn, actual, values, i, TypeMismatchKind.INVOKE_ARG_TYPE));
 			}
 		}
 		// Get value
@@ -808,13 +796,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		if(ownerValue == UninitializedValue.UNINITIALIZED_VALUE)
 			throw new AnalyzerException(insn, "Cannot call method on uninitialized reference");
 		else if (ownerValue == NullConstantValue.NULL_VALUE && !isMethodAddSuppressed(min)) {
-			markBad(insn, new ResolvableAnalyzerException((method, frames) -> {
-				// Validate that the owner value is no longer null when stack-frames are filled out
-				Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-				AbstractValue methodContext =
-						frame.getStack(frame.getStackSize() - (args.length + 1));
-				return !methodContext.isNull();
-			}, insn, "Cannot call method on null reference"));
+			markBad(insn, exceptionFactory.unexpectedNullReference(
+					min, ownerValue, values, TypeMismatchKind.INVOKE_HOST_NULL));
 			return newValue(Type.getMethodType(min.desc).getReturnType());
 		} else if (ownerValue == NullConstantValue.NULL_VALUE && isMethodAddSuppressed(min)) {
 			// Don't you just LOVE edge cases?
@@ -841,13 +824,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	@Override
 	public void returnOperation(AbstractInsnNode insn, AbstractValue value, AbstractValue expected) {
 		if(!isSubTypeOfOrNull(value, expected))
-			markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
-				// Validate that the top of the stack matches the expected type
-				Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-				AbstractValue returnValue = frame.getStack(frame.getStackSize() - 1);
-				return isSubTypeOfOrNull(returnValue, expected);
-			}, insn, "Incompatible return type, found '" + value.getType() + "', expected: " +
-					expected, expected, value));
+			markBad(insn, exceptionFactory.unexpectedType(expected.getType(), value.getType(), insn, value, TypeMismatchKind.RETURN));
 	}
 
 	@Override
@@ -874,71 +851,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		return UninitializedValue.UNINITIALIZED_VALUE;
 	}
 
-	private static boolean isSubTypeOfOrNull(AbstractValue value, AbstractValue expected) {
-		return isSubTypeOfOrNull(value, expected.getType());
-	}
-
-	private static boolean isSubTypeOfOrNull(AbstractValue value, Type expected) {
-		// TODO: This should not occur
-		if (value == null)
-			return false;
-		// Null type and primitives do not mix.
-		// Null types and object types do.
-		if (value == NullConstantValue.NULL_VALUE && !isPrimitive(expected))
-			return true;
-		// Uninitialized values are not subtypes
-		if (value == UninitializedValue.UNINITIALIZED_VALUE)
-			return false;
-		// Fallback
-		return isSubTypeOf(value.getType(), expected);
-	}
-
 	// ============================ PRIVATE UTILITIES  ============================ //
-
-	private static boolean isSubTypeOf(Type child, Type parent) {
-		// Can't handle null type
-		if (child == null)
-			return false;
-		// Simple equality check
-		if (child.equals(parent))
-			return true;
-		// Look at array element type
-		boolean bothArrays = child.getSort() == Type.ARRAY && parent.getSort() == Type.ARRAY;
-		if (bothArrays) {
-			// TODO: With usage cases of "isSubTypeOf(...)" should we just check the element types are equals?
-			//  - Or should sub-typing with array element types be used like it currently is?
-			child = child.getElementType();
-			parent = parent.getElementType();
-			// Dimensions must match, unless both are Object
-			if (child.getDimensions() != parent.getDimensions() &&
-					!(child.equals(TypeUtil.OBJECT_TYPE) && parent.equals(TypeUtil.OBJECT_TYPE)))
-				return false;
-		}
-		// Null check in case
-		if (parent == null)
-			return false;
-		// Treat lesser primitives as integers.
-		//  - Because of boolean consts are ICONST_0/ICONST_1
-		//  - Short parameters take the stack value of BIPUSH (int)
-		if (parent.getSort() >= Type.BOOLEAN && parent.getSort() <= Type.INT)
-			parent = Type.INT_TYPE;
-		// Check for primitives
-		//  - ASM sorts are in a specific order
-		//  - If the expected sort is a larger type (greater sort) then the given type can
-		//    be assumed to be compatible.
-		if (isPrimitive(parent) && isPrimitive(child))
-			return parent.getSort() >= child.getSort();
-		// Use a simplified check if the expected type is just "Object"
-		//  - Most things can be lumped into an object
-		if (!isPrimitive(child) && parent.getDescriptor().equals("Ljava/lang/Object;"))
-			return true;
-		// Check if types are compatible
-		if (child.getSort() == parent.getSort()) {
-			AbstractValue host = AbstractValue.ofDefault(parent);
-			return host != null && host.canMerge(AbstractValue.ofDefault(child));
-		}
-		return false;
-	}
 
 	private boolean isValueUnknown(AbstractValue value) {
 		return value.getValue() == null || value.getValue() instanceof Unresolved;
@@ -958,10 +871,6 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	private long toLong(AbstractValue value) {
 		return ((Number) value.getValue()).longValue();
-	}
-
-	private static boolean isPrimitive(Type type) {
-		return type.getSort() < Type.ARRAY;
 	}
 
 	private static boolean isMethodAddSuppressed(MethodInsnNode insn) {

@@ -1,6 +1,7 @@
 package me.coley.analysis;
 
 import me.coley.analysis.exception.ResolvableAnalyzerException;
+import me.coley.analysis.exception.ResolvableExceptionFactory;
 import me.coley.analysis.value.AbstractValue;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
@@ -33,6 +34,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		super(interpreter);
 		this.interpreter = interpreter;
 		this.interpreter.setAnalyzer(this);
+		this.interpreter.setErrorFactory(createExceptionFactory());
 	}
 
 	@Override
@@ -72,6 +74,13 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		if (skipDeadCodeBlocks) {
 			opaqueHandler.onVisitControlFlowEdge(insnIndex, successorIndex);
 		}
+	}
+
+	/**
+	 * @return Exception factory for interpreter to use.
+	 */
+	protected ResolvableExceptionFactory createExceptionFactory() {
+		return new ResolvableExceptionFactory();
 	}
 
 	/**

@@ -11,4 +11,4 @@ import java.util.function.BiPredicate;
  *
  * @author Matt
  */
-public interface PostValidator extends BiPredicate<MethodNode, Frame<AbstractValue>[]> {}
+public interface Validator extends BiPredicate<MethodNode, Frame<AbstractValue>[]> {}

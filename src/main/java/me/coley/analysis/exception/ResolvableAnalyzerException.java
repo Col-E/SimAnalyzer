@@ -10,30 +10,30 @@ import org.objectweb.asm.tree.analysis.Value;
 
 /**
  * An analyzer exception that is logged in the {@link SimInterpreter} but not immediately thrown.
- * Instead a {@link #postValidator} is run after analysis is done that checks if the cause of the
+ * Instead a {@link #validator} is run after analysis is done that checks if the cause of the
  * analysis error has been resolved.
  *
  * @author Matt
  */
 public class ResolvableAnalyzerException extends AnalyzerException {
-	private final PostValidator postValidator;
+	private final Validator validator;
 
 	/**
-	 * @param postValidator
+	 * @param validator
 	 * 		Error resolve checker.
 	 * @param insn
 	 * 		Instruction that caused the exception.
 	 * @param message
 	 * 		Additional information.
 	 */
-	public ResolvableAnalyzerException(PostValidator postValidator, AbstractInsnNode insn,
+	public ResolvableAnalyzerException(Validator validator, AbstractInsnNode insn,
 									   String message) {
 		super(insn, message);
-		this.postValidator = postValidator;
+		this.validator = validator;
 	}
 
 	/**
-	 * @param postValidator
+	 * @param validator
 	 * 		Error resolve checker.
 	 * @param insn
 	 * 		Instruction that caused the exception.
@@ -44,10 +44,10 @@ public class ResolvableAnalyzerException extends AnalyzerException {
 	 * @param actual
 	 * 		Actual value at instruction.
 	 */
-	public ResolvableAnalyzerException(PostValidator postValidator, AbstractInsnNode insn,
+	public ResolvableAnalyzerException(Validator validator, AbstractInsnNode insn,
 									   String message, Object expected, Value actual) {
 		super(insn, message, expected, actual);
-		this.postValidator = postValidator;
+		this.validator = validator;
 	}
 
 	/**
@@ -62,6 +62,6 @@ public class ResolvableAnalyzerException extends AnalyzerException {
 	 * @return {@code true} when the problem has been resolved.
 	 */
 	public boolean validate(MethodNode method, Frame<AbstractValue>[] frames) {
-		return postValidator.test(method, frames);
+		return validator.test(method, frames);
 	}
 }
