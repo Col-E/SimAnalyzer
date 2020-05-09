@@ -3,8 +3,6 @@ package me.coley.analysis;
 import me.coley.analysis.value.AbstractValue;
 import org.objectweb.asm.Opcodes;
 
-import java.util.List;
-
 /**
  * Factory for generating {@link AbstractValue} from static field references.
  *
