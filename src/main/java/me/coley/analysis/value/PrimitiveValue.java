@@ -113,6 +113,41 @@ public class PrimitiveValue extends AbstractValue {
 	}
 
 	/**
+	 * @return Current value as boolean.
+	 */
+	public boolean getBooleanValue() {
+		return ((Number) getValue()).intValue() > 1;
+	}
+
+	/**
+	 * @return Current value as integer.
+	 */
+	public int getIntValue() {
+		return ((Number) getValue()).intValue();
+	}
+
+	/**
+	 * @return Current value as integer.
+	 */
+	public float getFloatValue() {
+		return ((Number) getValue()).floatValue();
+	}
+
+	/**
+	 * @return Current value as double.
+	 */
+	public double getDoubleValue() {
+		return ((Number) getValue()).doubleValue();
+	}
+
+	/**
+	 * @return Current value as long.
+	 */
+	public long getLongValue() {
+		return ((Number) getValue()).longValue();
+	}
+
+	/**
 	 * @param other
 	 * 		Another value.
 	 *

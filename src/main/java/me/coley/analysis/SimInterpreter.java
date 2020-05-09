@@ -1,6 +1,6 @@
 package me.coley.analysis;
 
-import me.coley.analysis.exception.LoggedAnalyzerException;
+import me.coley.analysis.exception.ResolvableAnalyzerException;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.util.InsnUtil;
 import me.coley.analysis.util.TypeUtil;
@@ -36,6 +36,7 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();
+	private SimAnalyzer analyzer;
 
 	/**
 	 * Create an interpreter.
@@ -54,10 +55,83 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	/**
+	 * @param analyzer
+	 * 		Analyzer instance that runs the current interpreter.
+	 */
+	public void setAnalyzer(SimAnalyzer analyzer) {
+		this.analyzer = analyzer;
+	}
+
+	/**
 	 * @return {@code true}  when problems have been reported.
 	 */
 	public boolean hasReportedProblems() {
 		return !badTypeInsns.isEmpty();
+	}
+
+	private void handleOpqaues(AbstractInsnNode insn, AbstractValue value) {
+		if (value.isPrimitive() && value.isValueResolved()) {
+			int p1 = ((PrimitiveValue) value).getIntValue();
+			boolean gotoDestination = false;
+			switch(insn.getOpcode()) {
+				case IFEQ:
+					gotoDestination = p1 == 0;
+					break;
+				case IFNE:
+					gotoDestination = p1 != 0;
+					break;
+				case IFLT:
+					gotoDestination = p1 < 0;
+					break;
+				case IFGE:
+					gotoDestination = p1 >= 0;
+					break;
+				case IFGT:
+					gotoDestination = p1 > 0;
+					break;
+				case IFLE:
+					gotoDestination = p1 <= 0;
+					break;
+				default:
+					break;
+			}
+			analyzer.setOpaqueJump(insn, gotoDestination);
+		}
+	}
+
+	private void handleOpqaues(AbstractInsnNode insn, AbstractValue value1, AbstractValue value2) {
+		if (value1.isPrimitive() && value1.isValueResolved() && value2.isPrimitive() && value2.isValueResolved()) {
+			int p1 = ((PrimitiveValue) value1).getIntValue();
+			int p2 = ((PrimitiveValue) value2).getIntValue();
+			boolean gotoDestination = false;
+			switch(insn.getOpcode()) {
+				case IF_ICMPEQ:
+					gotoDestination = p1 == p2;
+					break;
+				case IF_ICMPNE:
+					gotoDestination = p1 != p2;
+					break;
+				case IF_ICMPLT:
+					gotoDestination = p1 < p2;
+					break;
+				case IF_ICMPGE:
+					gotoDestination = p1 >= p2;
+					break;
+				case IF_ICMPGT:
+					gotoDestination = p1 > p2;
+					break;
+				case IF_ICMPLE:
+					gotoDestination = p1 <= p2;
+					break;
+				default:
+					break;
+			}
+			analyzer.setOpaqueJump(insn, gotoDestination);
+		}
+	}
+
+	private void markBad(AbstractInsnNode insn, AnalyzerException e) {
+		badTypeInsns.put(insn, e);
 	}
 
 	private AbstractValue newValueOrVirtualized(Type type) {
@@ -213,7 +287,6 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			else if(argType.getSort() == Type.OBJECT && isPrimitive(insnType))
 				throw new AnalyzerException(insn, "Cannot mix type value with primitive-variable instruction");
 		}
-
 		// If we're operating on a load-instruction we want the return value to
 		// relate to the type of the instruction.
 		if(load && insnType != value.getType())
@@ -275,6 +348,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case IFGE:
 			case IFGT:
 			case IFLE:
+				handleOpqaues(insn, value);
 			case TABLESWITCH:
 			case LOOKUPSWITCH:
 				if (!(isSubTypeOf(value.getType(), Type.INT_TYPE) || isSubTypeOf(value.getType(), Type.BOOLEAN_TYPE)))
@@ -305,7 +379,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type fieldType = Type.getType(fin.desc);
 				if (!isSubTypeOf(value.getType(), fieldType))
-					markBad(insn, new LoggedAnalyzerException((methodNode, frames) -> {
+					markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
 						// Validate that the argument value is no longer null when stack-frames are filled out
 						Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 						AbstractValue methodContext = frame.getStack(frame.getStackSize() - 1);
@@ -320,7 +394,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type ownerType = Type.getObjectType(fin.owner);
 				if (!isSubTypeOf(value.getType(), ownerType))
-					markBad(insn, new LoggedAnalyzerException((methodNode, frames) -> {
+					markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
 						// Validate that the top of the stack matches the expected type
 						Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 						AbstractValue fieldContext = frame.getStack(frame.getStackSize() - 1);
@@ -350,7 +424,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 					default:
 						break;
 				}
-				throw new AnalyzerException(insn, "Invalid array type");
+				throw new AnalyzerException(insn, "Invalid array type specified in instruction");
 			case ANEWARRAY:
 				return newValue(Type.getType("[" + Type.getObjectType(((TypeInsnNode) insn).desc)));
 			case ARRAYLENGTH:
@@ -377,10 +451,6 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			default:
 				throw new IllegalStateException();
 		}
-	}
-
-	private void markBad(AbstractInsnNode insn, AnalyzerException e) {
-		badTypeInsns.put(insn, e);
 	}
 
 	@Override
@@ -427,6 +497,13 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				expected2 = Type.INT_TYPE;
 				wasAALOAD = true;
 				break;
+			case IF_ICMPEQ:
+			case IF_ICMPNE:
+			case IF_ICMPLT:
+			case IF_ICMPGE:
+			case IF_ICMPGT:
+			case IF_ICMPLE:
+				handleOpqaues(insn, value1, value2);
 			case IADD:
 			case ISUB:
 			case IMUL:
@@ -438,12 +515,6 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case IAND:
 			case IOR:
 			case IXOR:
-			case IF_ICMPEQ:
-			case IF_ICMPNE:
-			case IF_ICMPLT:
-			case IF_ICMPGE:
-			case IF_ICMPGT:
-			case IF_ICMPLE:
 				expected1 = Type.INT_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
@@ -691,7 +762,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			AbstractValue actual = values.get(i++);
 			if(!isSubTypeOf(actual.getType(), owner) &&
 					!(isMethodAddSuppressed(min) && actual == NullConstantValue.NULL_VALUE))
-				markBad(insn, new LoggedAnalyzerException((methodNode, frames) -> {
+				markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the owner value is no longer null when stack-frames are filled out
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 					// TODO: Validate the stack index is correct here
@@ -705,7 +776,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			AbstractValue actual = values.get(i++);
 			if(!isSubTypeOfOrNull(actual, expected)) {
 				int argIndex = i;
-				markBad(insn, new LoggedAnalyzerException((methodNode, frames) -> {
+				markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the argument value is no longer null when stack-frames are filled out
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 					AbstractValue methodContext = frame.getStack(frame.getStackSize() - (args.length - argIndex + 1));
@@ -737,7 +808,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		if(ownerValue == UninitializedValue.UNINITIALIZED_VALUE)
 			throw new AnalyzerException(insn, "Cannot call method on uninitialized reference");
 		else if (ownerValue == NullConstantValue.NULL_VALUE && !isMethodAddSuppressed(min)) {
-			markBad(insn, new LoggedAnalyzerException((method, frames) -> {
+			markBad(insn, new ResolvableAnalyzerException((method, frames) -> {
 				// Validate that the owner value is no longer null when stack-frames are filled out
 				Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 				AbstractValue methodContext =
@@ -770,7 +841,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	@Override
 	public void returnOperation(AbstractInsnNode insn, AbstractValue value, AbstractValue expected) {
 		if(!isSubTypeOfOrNull(value, expected))
-			markBad(insn, new LoggedAnalyzerException((methodNode, frames) -> {
+			markBad(insn, new ResolvableAnalyzerException((methodNode, frames) -> {
 				// Validate that the top of the stack matches the expected type
 				Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 				AbstractValue returnValue = frame.getStack(frame.getStackSize() - 1);
@@ -821,6 +892,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// Fallback
 		return isSubTypeOf(value.getType(), expected);
 	}
+
+	// ============================ PRIVATE UTILITIES  ============================ //
 
 	private static boolean isSubTypeOf(Type child, Type parent) {
 		// Can't handle null type

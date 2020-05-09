@@ -15,7 +15,7 @@ import org.objectweb.asm.tree.analysis.Value;
  *
  * @author Matt
  */
-public class LoggedAnalyzerException extends AnalyzerException {
+public class ResolvableAnalyzerException extends AnalyzerException {
 	private final PostValidator postValidator;
 
 	/**
@@ -26,8 +26,8 @@ public class LoggedAnalyzerException extends AnalyzerException {
 	 * @param message
 	 * 		Additional information.
 	 */
-	public LoggedAnalyzerException(PostValidator postValidator, AbstractInsnNode insn,
-								   String message) {
+	public ResolvableAnalyzerException(PostValidator postValidator, AbstractInsnNode insn,
+									   String message) {
 		super(insn, message);
 		this.postValidator = postValidator;
 	}
@@ -44,8 +44,8 @@ public class LoggedAnalyzerException extends AnalyzerException {
 	 * @param actual
 	 * 		Actual value at instruction.
 	 */
-	public LoggedAnalyzerException(PostValidator postValidator, AbstractInsnNode insn,
-								   String message, Object expected, Value actual) {
+	public ResolvableAnalyzerException(PostValidator postValidator, AbstractInsnNode insn,
+									   String message, Object expected, Value actual) {
 		super(insn, message, expected, actual);
 		this.postValidator = postValidator;
 	}

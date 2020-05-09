@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.analysis.Frame;
 import java.util.function.BiPredicate;
 
 /**
- * Validator for {@link LoggedAnalyzerException}.
+ * Validator for {@link ResolvableAnalyzerException}.
  *
  * @author Matt
  */
