@@ -36,6 +36,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		this.interpreter.setAnalyzer(this);
 		this.interpreter.setExceptionFactory(createExceptionFactory());
 		this.interpreter.setStaticInvokeFactory(createStaticInvokeFactory());
+		this.interpreter.setTypeChecker(createTypeChecker());
 	}
 
 	@Override
@@ -83,7 +84,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 * @return Exception factory for interpreter to use.
 	 */
 	protected ResolvableExceptionFactory createExceptionFactory() {
-		return new ResolvableExceptionFactory();
+		return new ResolvableExceptionFactory(createTypeChecker());
 	}
 
 	/**
@@ -93,6 +94,29 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 */
 	protected StaticInvokeFactory createStaticInvokeFactory() {
 		return null;
+	}
+
+	/**
+	 * Provides a {@link Class#isAssignableFrom(Class)} comparison by default.
+	 * <br>
+	 * This is in a lot of cases and is <b>highly recommended</b> that you override this and
+	 * provide access to some inheritance graph to support non-runtime types.
+	 *
+	 * @return Type checker for interpreter to use.
+	 */
+	protected TypeChecker createTypeChecker() {
+		return (parent, child) -> {
+			try {
+				Class<?> clsParent = Class.forName(parent.getClassName(), false,
+						ClassLoader.getSystemClassLoader());
+				Class<?> clsChild = Class.forName(child.getClassName(), false,
+						ClassLoader.getSystemClassLoader());
+				return clsParent.isAssignableFrom(clsChild);
+			} catch(Throwable t) {
+				t.printStackTrace();
+				return false;
+			}
+		};
 	}
 
 	/**

@@ -1,6 +1,7 @@
 package me.coley.analysis.value;
 
 import me.coley.analysis.StaticInvokeFactory;
+import me.coley.analysis.TypeChecker;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Opcodes;
@@ -15,7 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * Value recording the type and value<i>(using reflection and other means to track the existing value)</i>.
@@ -23,7 +24,7 @@ import java.util.function.Supplier;
  * @author Matt
  */
 public class SimulatedVirtualValue extends VirtualValue {
-	private static final Map<String, Supplier<SimulatedVirtualValue>> TYPE_PRODUCERS = new HashMap<>();
+	private static final Map<String, Function<TypeChecker, SimulatedVirtualValue>> TYPE_PRODUCERS = new HashMap<>();
 	private static final String[][] BLACKLISTED_METHODS = {
 		{"wait", "()V"},
 		{"wait", "(J)V"},
@@ -45,12 +46,12 @@ public class SimulatedVirtualValue extends VirtualValue {
 	));
 	private Object[] currentValue;
 
-	protected SimulatedVirtualValue(Type type, Object value) {
-		this(type, value, new Object[]{value});
+	protected SimulatedVirtualValue(Type type, Object value, TypeChecker typeChecker) {
+		this(type, value, new Object[]{value}, typeChecker);
 	}
 
-	protected SimulatedVirtualValue(Type type, Object value, Object[] currentValue) {
-		super(type, copyValue(value));
+	protected SimulatedVirtualValue(Type type, Object value, Object[] currentValue, TypeChecker typeChecker) {
+		super(type, copyValue(value), typeChecker);
 		this.currentValue = currentValue;
 		this.currentValue[0] = value;
 	}
@@ -68,23 +69,27 @@ public class SimulatedVirtualValue extends VirtualValue {
 	/**
 	 * Create a new simulation object for the given type.
 	 *
+	 * @param typeChecker
+	 * 		Type checker for comparison against other types.
 	 * @param type
 	 * 		Some type.
 	 *
 	 * @return New instance of type.
 	 */
-	public static SimulatedVirtualValue initialize(Type type) {
-		return TYPE_PRODUCERS.get(type.getInternalName()).get();
+	public static SimulatedVirtualValue initialize(TypeChecker typeChecker, Type type) {
+		return TYPE_PRODUCERS.get(type.getInternalName()).apply(typeChecker);
 	}
 
 	/**
+	 * @param typeChecker
+	 * 		Type checker for comparison against other types.
 	 * @param value
 	 * 		String.
 	 *
 	 * @return String value.
 	 */
-	public static SimulatedVirtualValue ofString(String value) {
-		return new SimulatedVirtualValue(Type.getObjectType("java/lang/String"), value);
+	public static SimulatedVirtualValue ofString(TypeChecker typeChecker, String value) {
+		return new SimulatedVirtualValue(Type.getObjectType("java/lang/String"), value, typeChecker);
 	}
 
 	@Override
@@ -99,11 +104,14 @@ public class SimulatedVirtualValue extends VirtualValue {
 	 * 		Method invoke instruction.
 	 * @param arguments
 	 * 		Argument values.
+	 * @param typeChecker
+	 *      Type checker for comparison against other types.
 	 *
 	 * @return New instance from static method invoke.<br><b>Will be {@code null} if the method
 	 * could not be invoked</b>.
 	 */
-	public static AbstractValue ofStaticInvoke(StaticInvokeFactory factory, MethodInsnNode insn, List<? extends AbstractValue> arguments)
+	public static AbstractValue ofStaticInvoke(StaticInvokeFactory factory, MethodInsnNode insn,
+											   List<? extends AbstractValue> arguments, TypeChecker typeChecker)
 			throws SimFailedException {
 		String owner = insn.owner;
 		String name = insn.name;
@@ -114,7 +122,7 @@ public class SimulatedVirtualValue extends VirtualValue {
 			throw new SimFailedException(insn, "Static method is not whitelisted.");
 		try {
 			return invokeStatic(owner, name, Type.getMethodType(desc),
-					arguments.stream().map(AbstractValue::getValue).toArray());
+					arguments.stream().map(AbstractValue::getValue).toArray(), typeChecker);
 		} catch(Throwable t) {
 			throw new SimFailedException(insn, "Failed to invoke method", t);
 		}
@@ -183,7 +191,7 @@ public class SimulatedVirtualValue extends VirtualValue {
 				if (argsMatch) {
 					c.setAccessible(true);
 					Object retVal = c.newInstance(argValues);
-					return new SimulatedVirtualValue(Type.getType(retVal.getClass()), retVal);
+					return new SimulatedVirtualValue(Type.getType(retVal.getClass()), retVal, typeChecker);
 				}
 			}
 		}
@@ -218,7 +226,7 @@ public class SimulatedVirtualValue extends VirtualValue {
 						return unboxed(retVal);
 					}  else {
 						// Not a primitive
-						return new SimulatedVirtualValue(Type.getType(retVal.getClass()), retVal, currentValue);
+						return new SimulatedVirtualValue(Type.getType(retVal.getClass()), retVal, currentValue, typeChecker);
 					}
 				}
 			}
@@ -235,13 +243,15 @@ public class SimulatedVirtualValue extends VirtualValue {
 	 * 		Method type descriptor.
 	 * @param argValues
 	 * 		Argument values
+	 * @param typeChecker
+	 * 		Type checker for comparison against other types.
 	 *
 	 * @return New value holder containing the new value from invoking the method.
 	 *
 	 * @throws ReflectiveOperationException
 	 * 		When the target method could not be invoked.
 	 */
-	private static AbstractValue invokeStatic(String owner, String name, Type desc, Object[] argValues)
+	private static AbstractValue invokeStatic(String owner, String name, Type desc, Object[] argValues, TypeChecker typeChecker)
 			throws ReflectiveOperationException {
 		Class<?> cls = Class.forName(owner.replace('/', '.'));
 		Type retType = desc.getReturnType();
@@ -271,7 +281,7 @@ public class SimulatedVirtualValue extends VirtualValue {
 						return unboxed(retVal);
 					}  else {
 						// Not a primitive
-						return new SimulatedVirtualValue(Type.getType(retVal.getClass()), retVal);
+						return new SimulatedVirtualValue(Type.getType(retVal.getClass()), retVal, typeChecker);
 					}
 				}
 
@@ -327,12 +337,10 @@ public class SimulatedVirtualValue extends VirtualValue {
 	}
 
 	static {
-		TYPE_PRODUCERS.put("java/lang/StringBuilder",
-				() -> new SimulatedVirtualValue(Type.getObjectType("java/lang/StringBuilder"),
-						new StringBuilder()));
-		TYPE_PRODUCERS.put("java/lang/StringBuffer",
-				() -> new SimulatedVirtualValue(Type.getObjectType("java/lang/StringBuffer"),
-						new StringBuffer()));
-		TYPE_PRODUCERS.put("java/lang/String", () -> ofString(""));
+		TYPE_PRODUCERS.put("java/lang/StringBuilder", typeChecker ->
+				new SimulatedVirtualValue(Type.getObjectType("java/lang/StringBuilder"), new StringBuilder(), typeChecker));
+		TYPE_PRODUCERS.put("java/lang/StringBuffer", typeChecker ->
+				new SimulatedVirtualValue(Type.getObjectType("java/lang/StringBuffer"), new StringBuffer(), typeChecker));
+		TYPE_PRODUCERS.put("java/lang/String", typeChecker -> ofString(typeChecker, ""));
 	}
 }

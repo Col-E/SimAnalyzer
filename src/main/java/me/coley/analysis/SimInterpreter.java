@@ -38,6 +38,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();
 	private ResolvableExceptionFactory exceptionFactory;
 	private StaticInvokeFactory staticInvokeFactory;
+	private TypeChecker typeChecker;
 	private SimAnalyzer analyzer;
 
 	/**
@@ -94,7 +95,20 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		this.staticInvokeFactory = staticInvokeFactory;
 	}
 
+	/**
+	 * @return Type checker for parent/child relation validation.
+	 */
+	public TypeChecker getTypeChecker() {
+		return typeChecker;
+	}
 
+	/**
+	 * @param typeChecker
+	 * 		Type checker for parent/child relation validation.
+	 */
+	public void setTypeChecker(TypeChecker typeChecker) {
+		this.typeChecker = typeChecker;
+	}
 
 	/**
 	 * @return {@code true}  when problems have been reported.
@@ -170,7 +184,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	private AbstractValue newValueOrVirtualized(Type type) {
 		if (SimulatedVirtualValue.supported(type))
-			return SimulatedVirtualValue.initialize(type);
+			return SimulatedVirtualValue.initialize(typeChecker, type);
 		return newValue(type);
 	}
 
@@ -182,7 +196,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return null;
 		else if (type.getSort() <= Type.DOUBLE)
 			return new PrimitiveValue(type);
-		return VirtualValue.ofVirtual(type);
+		return VirtualValue.ofVirtual(typeChecker, type);
 	}
 
 	@Override
@@ -243,12 +257,12 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				} else if (value instanceof Double) {
 					return PrimitiveValue.ofDouble((double) value);
 				} else if (value instanceof String) {
-					return SimulatedVirtualValue.ofString((String) value);
+					return SimulatedVirtualValue.ofString(typeChecker, (String) value);
 				} else if (value instanceof Type) {
 					Type type =  (Type) value;
 					int sort = type.getSort();
 					if (sort == Type.OBJECT || sort == Type.ARRAY) {
-						return VirtualValue.ofClass(type);
+						return VirtualValue.ofClass(typeChecker, type);
 					} else if (sort == Type.METHOD) {
 						return newValue(Type.getObjectType("java/lang/invoke/MethodType"));
 					} else {
@@ -385,23 +399,25 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				handleOpqaues(insn, value);
 			case TABLESWITCH:
 			case LOOKUPSWITCH:
-				if (!(isSubTypeOf(value.getType(), Type.INT_TYPE) || isSubTypeOf(value.getType(), Type.BOOLEAN_TYPE)))
+				if (!(isSubTypeOf(typeChecker, value.getType(), Type.INT_TYPE)
+						|| isSubTypeOf(typeChecker, value.getType(), Type.BOOLEAN_TYPE)))
 					throw new AnalyzerException(insn, "Expected int type.");
 				return null;
 			case IRETURN:
-				if (!(isSubTypeOf(value.getType(), Type.INT_TYPE) || isSubTypeOf(value.getType(), Type.BOOLEAN_TYPE)))
+				if (!(isSubTypeOf(typeChecker, value.getType(), Type.INT_TYPE)
+						|| isSubTypeOf(typeChecker, value.getType(), Type.BOOLEAN_TYPE)))
 					throw new AnalyzerException(insn, "Expected int return type.");
 				return null;
 			case LRETURN:
-				if (!isSubTypeOf(value.getType(), Type.LONG_TYPE))
+				if (!isSubTypeOf(typeChecker, value.getType(), Type.LONG_TYPE))
 					throw new AnalyzerException(insn, "Expected long return type.");
 				return null;
 			case FRETURN:
-				if (!isSubTypeOf(value.getType(), Type.FLOAT_TYPE))
+				if (!isSubTypeOf(typeChecker, value.getType(), Type.FLOAT_TYPE))
 					throw new AnalyzerException(insn, "Expected float return type.");
 				return null;
 			case DRETURN:
-				if (!isSubTypeOf(value.getType(), Type.DOUBLE_TYPE))
+				if (!isSubTypeOf(typeChecker, value.getType(), Type.DOUBLE_TYPE))
 					throw new AnalyzerException(insn, "Expected double return type.");
 				return null;
 			case ARETURN:
@@ -412,7 +428,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				// Value == item on stack
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type fieldType = Type.getType(fin.desc);
-				if (!isSubTypeOf(value.getType(), fieldType))
+				if (!isSubTypeOf(typeChecker, value.getType(), fieldType))
 					markBad(insn, exceptionFactory.unexpectedType(fieldType, value.getType(), insn, value, TypeMismatchKind.PUTSTATIC));
 				return null;
 			}
@@ -421,7 +437,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				// - Check instance context is of the owner class
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type ownerType = Type.getObjectType(fin.owner);
-				if (!isSubTypeOf(value.getType(), ownerType))
+				if (!isSubTypeOf(typeChecker, value.getType(), ownerType))
 					markBad(insn, exceptionFactory.unexpectedType(Type.getObjectType(fin.owner),
 							value.getType(), insn, value, TypeMismatchKind.GETFIELD));
 				Type type = Type.getType(fin.desc);
@@ -489,7 +505,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				expected2 = Type.INT_TYPE;
 				break;
 			case BALOAD:
-				if (isSubTypeOf(value1.getType(), Type.getType("[Z"))) {
+				if (isSubTypeOf(typeChecker, value1.getType(), Type.getType("[Z"))) {
 					expected1 = Type.getType("[Z");
 				} else {
 					expected1 = Type.getType("[B");
@@ -600,9 +616,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			// In the bytecode, we don't have any immediate way to validate against an expected type.
 			// So we shall do nothing :)
 		} else if (value1 != UninitializedValue.UNINITIALIZED_VALUE && value2 != UninitializedValue.UNINITIALIZED_VALUE) {
-			if (!isSubTypeOfOrNull(value1, expected1))
+			if (!isSubTypeOfOrNull(typeChecker, value1, expected1))
 				markBad(insn, new AnalyzerException(insn, "First argument not of expected type", expected1, value1));
-			else if (!isSubTypeOfOrNull(value2, expected2))
+			else if (!isSubTypeOfOrNull(typeChecker, value2, expected2))
 				markBad(insn, new AnalyzerException(insn, "Second argument not of expected type", expected2, value2));
 		} else {
 			markBad(insn, new AnalyzerException(insn, "Cannot act on uninitialized values", expected2, value2));
@@ -718,7 +734,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				expected3 = Type.INT_TYPE;
 				break;
 			case BASTORE:
-				if(isSubTypeOf(value1.getType(), Type.getType("[Z"))) {
+				if(isSubTypeOf(typeChecker, value1.getType(), Type.getType("[Z"))) {
 					expected1 = Type.getType("[Z");
 				} else {
 					expected1 = Type.getType("[B");
@@ -752,11 +768,11 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			default:
 				throw new AssertionError();
 		}
-		if(!isSubTypeOf(value1.getType(), expected1))
+		if(!isSubTypeOf(typeChecker, value1.getType(), expected1))
 			markBad(insn, new AnalyzerException(insn, "First argument not of expected type", expected1, value1));
 		else if(!Type.INT_TYPE.equals(value2.getType()))
 			markBad(insn, new AnalyzerException(insn, "Second argument not an integer", BasicValue.INT_VALUE, value2));
-		else if(!isSubTypeOf(value3.getType(), expected3))
+		else if(!isSubTypeOf(typeChecker, value3.getType(), expected3))
 			markBad(insn, new AnalyzerException(insn, "Second argument not of expected type", expected3, value3));
 		return null;
 	}
@@ -784,7 +800,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			MethodInsnNode min = ((MethodInsnNode) insn);
 			Type owner = Type.getObjectType(min.owner);
 			AbstractValue actual = values.get(i++);
-			if(!isSubTypeOf(actual.getType(), owner) &&
+			if(!isSubTypeOf(typeChecker, actual.getType(), owner) &&
 					!(isMethodAddSuppressed(min) && actual == NullConstantValue.NULL_VALUE))
 				markBad(insn, exceptionFactory.unexpectedMethodHostType(owner, actual.getType(),
 						(MethodInsnNode) insn, actual, values, TypeMismatchKind.INVOKE_HOST_TYPE));
@@ -792,7 +808,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		while(i < values.size()) {
 			Type expected = args[j++];
 			AbstractValue actual = values.get(i++);
-			if(!isSubTypeOfOrNull(actual, expected)) {
+			if(!isSubTypeOfOrNull(typeChecker, actual, expected)) {
 				markBad(insn, exceptionFactory.unexpectedMethodArgType(expected, actual.getType(),
 						insn, actual, values, i, TypeMismatchKind.INVOKE_ARG_TYPE));
 			}
@@ -805,7 +821,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			// Attempt to create simulated value
 			MethodInsnNode min = (MethodInsnNode) insn;
 			try {
-				AbstractValue value = SimulatedVirtualValue.ofStaticInvoke(staticInvokeFactory, min, values);
+				AbstractValue value = SimulatedVirtualValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
 				if (value != null)
 					return value;
 			} catch(SimFailedException ex) {
@@ -840,7 +856,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			}
 			if (ownerValue instanceof VirtualValue) {
 				VirtualValue virtualOwner = (VirtualValue) ownerValue;
-				return virtualOwner.ofMethodRef(Type.getMethodType(((MethodInsnNode) insn).desc));
+				return virtualOwner.ofMethodRef(typeChecker, Type.getMethodType(((MethodInsnNode) insn).desc));
 			}
 			throw new AnalyzerException(insn, "Virtual method context could not be resolved");
 		}
@@ -848,7 +864,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public void returnOperation(AbstractInsnNode insn, AbstractValue value, AbstractValue expected) {
-		if(!isSubTypeOfOrNull(value, expected))
+		if(!isSubTypeOfOrNull(typeChecker, value, expected))
 			markBad(insn, exceptionFactory.unexpectedType(expected.getType(), value.getType(), insn, value, TypeMismatchKind.RETURN));
 	}
 
@@ -865,9 +881,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// Handle null
 		//  - NULL can be ANY type, so... it wins the "common super type" here
 		if (value2 == NullConstantValue.NULL_VALUE)
-			return value1.isNull() ? AbstractValue.ofDefault(value1.getType()) : newValue(value1.getType());
+			return value1.isNull() ? AbstractValue.ofDefault(typeChecker, value1.getType()) : newValue(value1.getType());
 		else if (value1 == NullConstantValue.NULL_VALUE)
-			return value2.isNull() ? AbstractValue.ofDefault(value2.getType()) : newValue(value2.getType());
+			return value2.isNull() ? AbstractValue.ofDefault(typeChecker, value2.getType()) : newValue(value2.getType());
 		// Check standard merge
 		if (value1.canMerge(value2))
 			return newValue(value1.getType());

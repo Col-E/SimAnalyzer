@@ -1,6 +1,5 @@
 package me.coley.analysis;
 
-import me.coley.analysis.value.VirtualValue;
 import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -41,25 +40,6 @@ public class TestUtils {
 	public static URL getClasspathUrl(String file) {
 		ClassLoader classLoader = TestUtils.class.getClassLoader();
 		return classLoader.getResource(file);
-	}
-
-	/**
-	 * Setup type lookups / parent checking.
-	 */
-	public static void setupVirtualLookups() {
-		VirtualValue.setParentCheck((parent, child) -> {
-			try {
-				Class<?> clsParent = Class.forName(parent.getClassName(), false,
-						ClassLoader.getSystemClassLoader());
-				Class<?> clsChild = Class.forName(child.getClassName(), false,
-						ClassLoader.getSystemClassLoader());
-				return clsParent.isAssignableFrom(clsChild);
-			} catch(Throwable t) {
-				t.printStackTrace();
-				Assertions.fail(t);
-				return false;
-			}
-		});
 	}
 
 	/**

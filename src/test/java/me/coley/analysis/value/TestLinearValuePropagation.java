@@ -12,11 +12,6 @@ import org.objectweb.asm.tree.analysis.Frame;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestLinearValuePropagation extends TestUtils {
-	@BeforeAll
-	public static void setup() {
-		setupVirtualLookups();
-	}
-
 	@Test
 	public void testImmediate() throws AnalyzerException {
 		ClassNode node = getFromName("bin/javac/HelloWorld.class");

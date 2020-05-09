@@ -1,5 +1,6 @@
 package me.coley.analysis.exception;
 
+import me.coley.analysis.TypeChecker;
 import me.coley.analysis.util.InsnUtil;
 import me.coley.analysis.util.TypeUtil;
 import me.coley.analysis.value.AbstractValue;
@@ -20,6 +21,15 @@ import static org.objectweb.asm.Opcodes.INVOKEDYNAMIC;
  * @author Matt
  */
 public class ResolvableExceptionFactory {
+	private final TypeChecker typeChecker;
+
+	/**
+	 * @param typeChecker
+	 * 		Type checker for comparison against other types.
+	 */
+	public ResolvableExceptionFactory(TypeChecker typeChecker) {
+		this.typeChecker = typeChecker;
+	}
 
 	/**
 	 * @param expectedType
@@ -47,21 +57,21 @@ public class ResolvableExceptionFactory {
 					// Validate that the argument value is no longer null when stack-frames are filled out
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 					AbstractValue methodContext = frame.getStack(frame.getStackSize() - 1);
-					return TypeUtil.isSubTypeOfOrNull(methodContext, expectedType);
+					return TypeUtil.isSubTypeOfOrNull(typeChecker, methodContext, expectedType);
 				}, insn, "Expected type: " + expectedType);
 			case GETFIELD:
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the top of the stack matches the expected type
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 					AbstractValue fieldContext = frame.getStack(frame.getStackSize() - 1);
-					return TypeUtil.isSubTypeOf(fieldContext.getType(), expectedType);
+					return TypeUtil.isSubTypeOf(typeChecker, fieldContext.getType(), expectedType);
 				}, insn, "Expected type: " + expectedType);
 			case RETURN:
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the top of the stack matches the expected type
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 					AbstractValue returnValue = frame.getStack(frame.getStackSize() - 1);
-					return TypeUtil.isSubTypeOfOrNull(returnValue, expectedType);
+					return TypeUtil.isSubTypeOfOrNull(typeChecker, returnValue, expectedType);
 				}, insn, "Incompatible return type, found '" + actualType + "', expected: " +
 						expectedType, expectedType, actualValue);
 			default:
@@ -101,7 +111,7 @@ public class ResolvableExceptionFactory {
 			// TODO: Validate the stack index is correct here
 			AbstractValue methodContext =
 					frame.getStack(frame.getStackSize() - (args.length + 1));
-			return TypeUtil.isSubTypeOf(methodContext.getType(), owner);
+			return TypeUtil.isSubTypeOf(typeChecker, methodContext.getType(), owner);
 		}, insn, "Method owner does not match type on stack");
 	}
 
@@ -138,7 +148,7 @@ public class ResolvableExceptionFactory {
 			// Validate that the argument value is no longer null when stack-frames are filled out
 			Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 			AbstractValue methodContext = frame.getStack(frame.getStackSize() - (args.length - argIndex + 1));
-			return TypeUtil.isSubTypeOfOrNull(methodContext, expectedType);
+			return TypeUtil.isSubTypeOfOrNull(typeChecker, methodContext, expectedType);
 		},insn, "Argument type was \"" + actualType + "\" but expected \"" + expectedType + "\"");
 	}
 

@@ -1,5 +1,6 @@
 package me.coley.analysis.util;
 
+import me.coley.analysis.TypeChecker;
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.NullConstantValue;
 import me.coley.analysis.value.UninitializedValue;
@@ -91,8 +92,10 @@ public class TypeUtil {
 	}
 
 	/**
-	 * Helper call for {@link #isSubTypeOfOrNull(AbstractValue, Type)}.
+	 * Helper call for {@link #isSubTypeOfOrNull(TypeChecker, AbstractValue, Type)}.
 	 *
+	 * @param typeChecker
+	 * 		Type checker for comparison against other types.
 	 * @param childValue
 	 * 		Some value that has a type.
 	 * @param parentValue
@@ -101,11 +104,13 @@ public class TypeUtil {
 	 * @return {@code true} when the child value's type is a subtype of the parent value's type,
 	 * or the child value is {@code null}.
 	 */
-	public static boolean isSubTypeOfOrNull(AbstractValue childValue, AbstractValue parentValue) {
-		return isSubTypeOfOrNull(childValue, parentValue.getType());
+	public static boolean isSubTypeOfOrNull(TypeChecker typeChecker, AbstractValue childValue, AbstractValue parentValue) {
+		return isSubTypeOfOrNull(typeChecker, childValue, parentValue.getType());
 	}
 
 	/**
+	 * @param typeChecker
+	 *      Type checker for comparison against other types.
 	 * @param childValue
 	 * 		Some value that has a type.
 	 * @param parent
@@ -114,7 +119,7 @@ public class TypeUtil {
 	 * @return {@code true} when the child value's type is a subtype of the parent,
 	 * or the child value is {@code null}.
 	 */
-	public static boolean isSubTypeOfOrNull(AbstractValue childValue, Type parent) {
+	public static boolean isSubTypeOfOrNull(TypeChecker typeChecker, AbstractValue childValue, Type parent) {
 		// TODO: This should not occur
 		if (childValue == null)
 			return false;
@@ -126,15 +131,16 @@ public class TypeUtil {
 		if (childValue == UninitializedValue.UNINITIALIZED_VALUE)
 			return false;
 		// Fallback
-		return isSubTypeOf(childValue.getType(), parent);
+		return isSubTypeOf(typeChecker, childValue.getType(), parent);
 	}
 
 	/**
+	 * @param typeChecker Type checker for comparison against other types.
 	 * @param child Some type.
 	 * @param parent Some other type.
 	 * @return {@code true} when the child is a subtype of the parent.
 	 */
-	public static boolean isSubTypeOf(Type child, Type parent) {
+	public static boolean isSubTypeOf(TypeChecker typeChecker, Type child, Type parent) {
 		// Can't handle null type
 		if (child == null)
 			return false;
@@ -173,8 +179,8 @@ public class TypeUtil {
 			return true;
 		// Check if types are compatible
 		if (child.getSort() == parent.getSort()) {
-			AbstractValue host = AbstractValue.ofDefault(parent);
-			return host != null && host.canMerge(AbstractValue.ofDefault(child));
+			AbstractValue host = AbstractValue.ofDefault(typeChecker, parent);
+			return host != null && host.canMerge(AbstractValue.ofDefault(typeChecker, child));
 		}
 		return false;
 	}
