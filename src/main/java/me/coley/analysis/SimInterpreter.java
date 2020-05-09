@@ -38,6 +38,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();
 	private ResolvableExceptionFactory exceptionFactory;
 	private StaticInvokeFactory staticInvokeFactory;
+	private StaticGetFactory staticGetFactory;
 	private TypeChecker typeChecker;
 	private SimAnalyzer analyzer;
 
@@ -93,6 +94,21 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	 */
 	public void setStaticInvokeFactory(StaticInvokeFactory staticInvokeFactory) {
 		this.staticInvokeFactory = staticInvokeFactory;
+	}
+
+	/**
+	 * @return Factory to generate values from static field get calls.
+	 */
+	public StaticGetFactory getStaticGetFactory() {
+		return staticGetFactory;
+	}
+
+	/**
+	 * @param staticGetFactory
+	 * 		Factory to generate values from static field get calls.
+	 */
+	public void setStaticGetFactory(StaticGetFactory staticGetFactory) {
+		this.staticGetFactory = staticGetFactory;
 	}
 
 	/**
@@ -278,7 +294,11 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case JSR:
 				return ReturnAddressValue.RETURN_ADDRESS_VALUE;
 			case GETSTATIC:
-				Type type = Type.getType(((FieldInsnNode) insn).desc);
+				FieldInsnNode fin = (FieldInsnNode) insn;
+				Type type = Type.getType(fin.desc);
+				if (staticGetFactory != null) {
+					return staticGetFactory.getStatic(fin.owner, fin.name, fin.desc);
+				}
 				return newValue(type);
 			case NEW:
 				return newValueOrVirtualized(Type.getObjectType(((TypeInsnNode) insn).desc));
