@@ -37,6 +37,7 @@ import static me.coley.analysis.util.TypeUtil.*;
 public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();
 	private ResolvableExceptionFactory exceptionFactory;
+	private StaticInvokeFactory staticInvokeFactory;
 	private SimAnalyzer analyzer;
 
 	/**
@@ -64,12 +65,36 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	/**
+	 * @return Factory to generate resolvable exceptions.
+	 */
+	public ResolvableExceptionFactory getExceptionFactory() {
+		return exceptionFactory;
+	}
+
+	/**
 	 * @param exceptionFactory
 	 * 		Factory to generate resolvable exceptions.
 	 */
-	public void setErrorFactory(ResolvableExceptionFactory exceptionFactory) {
+	public void setExceptionFactory(ResolvableExceptionFactory exceptionFactory) {
 		this.exceptionFactory = exceptionFactory;
 	}
+
+	/**
+	 * @return Factory to generate values from static method calls.
+	 */
+	public StaticInvokeFactory getStaticInvokeFactory() {
+		return staticInvokeFactory;
+	}
+
+	/**
+	 * @param staticInvokeFactory
+	 * 		Factory to generate values from static method calls.
+	 */
+	public void setStaticInvokeFactory(StaticInvokeFactory staticInvokeFactory) {
+		this.staticInvokeFactory = staticInvokeFactory;
+	}
+
+
 
 	/**
 	 * @return {@code true}  when problems have been reported.
@@ -780,7 +805,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			// Attempt to create simulated value
 			MethodInsnNode min = (MethodInsnNode) insn;
 			try {
-				AbstractValue value = SimulatedVirtualValue.ofStaticInvoke(min, values);
+				AbstractValue value = SimulatedVirtualValue.ofStaticInvoke(staticInvokeFactory, min, values);
 				if (value != null)
 					return value;
 			} catch(SimFailedException ex) {

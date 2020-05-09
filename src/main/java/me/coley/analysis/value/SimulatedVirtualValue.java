@@ -1,5 +1,6 @@
 package me.coley.analysis.value;
 
+import me.coley.analysis.StaticInvokeFactory;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Opcodes;
@@ -92,20 +93,24 @@ public class SimulatedVirtualValue extends VirtualValue {
 	}
 
 	/**
+	 * @param factory
+	 * 		Factory used to provide values. May be {@code null}. If
 	 * @param insn
 	 * 		Method invoke instruction.
 	 * @param arguments
-	 * 		Argument values
+	 * 		Argument values.
 	 *
 	 * @return New instance from static method invoke.<br><b>Will be {@code null} if the method
 	 * could not be invoked</b>.
 	 */
-	public static AbstractValue ofStaticInvoke(MethodInsnNode insn, List<? extends AbstractValue> arguments)
+	public static AbstractValue ofStaticInvoke(StaticInvokeFactory factory, MethodInsnNode insn, List<? extends AbstractValue> arguments)
 			throws SimFailedException {
 		String owner = insn.owner;
 		String name = insn.name;
 		String desc = insn.desc;
-		if (!isStaticMethodWhitelisted(owner, name, desc))
+		if (factory != null)
+			return factory.invokeStatic(owner, name, desc, arguments);
+		else if (!isStaticMethodWhitelisted(owner, name, desc))
 			throw new SimFailedException(insn, "Static method is not whitelisted.");
 		try {
 			return invokeStatic(owner, name, Type.getMethodType(desc),
