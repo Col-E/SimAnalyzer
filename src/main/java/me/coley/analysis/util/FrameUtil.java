@@ -31,6 +31,18 @@ public class FrameUtil {
 	}
 
 	/**
+	 * Fetch the top stack in the frame.
+	 *
+	 * @param frame
+	 * 		Frame to look at.
+	 *
+	 * @return Value at top of stack.
+	 */
+	public static AbstractValue getTopStack(Frame<AbstractValue> frame) {
+		return frame.getStack(frame.getStackSize() - 1);
+	}
+
+	/**
 	 * Fetch the top stack value in the frame.
 	 *
 	 * @param frame
@@ -38,11 +50,11 @@ public class FrameUtil {
 	 * @param <T>
 	 * 		Type to return.
 	 *
-	 * @return Value at top of stack.
+	 * @return Literal value at top of stack.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T getTopStack(Frame<AbstractValue> frame) {
-		return (T) frame.getStack(frame.getStackSize() - 1).getValue();
+	public static <T> T getTopStackLiteral(Frame<AbstractValue> frame) {
+		return (T) getTopStack(frame).getValue();
 	}
 
 	/**
@@ -52,14 +64,28 @@ public class FrameUtil {
 	 * 		Frame to look at.
 	 * @param offset
 	 * 		Offset from top to fetch.
-	 * @param <T>
-	 * 		Type to return.
 	 *
 	 * @return Value at offset from the top of the stack.
 	 */
+	public static AbstractValue getStackFromTop(Frame<AbstractValue> frame, int offset) {
+		return frame.getStack(frame.getStackSize() - (1 + offset));
+	}
+
+	/**
+	 * Fetch the literal value off of the stack with the given offset from the top slot in the frame.
+	 *
+	 * @param frame
+	 * 		Frame to look at.
+	 * @param offset
+	 * 		Offset from top to fetch.
+	 * @param <T>
+	 * 		Type to return.
+	 *
+	 * @return Literal value at offset from the top of the stack.
+	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T getStackValueFromTop(Frame<AbstractValue> frame, int offset) {
-		return (T) frame.getStack(frame.getStackSize() - (1 + offset)).getValue();
+	public static <T> T getStackLiteralFromTop(Frame<AbstractValue> frame, int offset) {
+		return (T) getStackFromTop(frame, offset).getValue();
 	}
 
 	/**
@@ -70,12 +96,12 @@ public class FrameUtil {
 	 * @param argCount
 	 * 		Number of items off of the stack to pull.
 	 *
-	 * @return Array of values from the stack.
+	 * @return Array of literal values from the stack.
 	 */
-	public static Object[] getStackArguments(Frame<AbstractValue> frame, int argCount) {
+	public static Object[] getStackArgumentLiterals(Frame<AbstractValue> frame, int argCount) {
 		Object[] args = new Object[argCount];
 		for (int i = 0; i < argCount; i++)
-			args[i] = getStackValueFromTop(frame, (argCount - i) - 1);
+			args[i] = getStackLiteralFromTop(frame, (argCount - i) - 1);
 		return args;
 	}
 }

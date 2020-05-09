@@ -2,7 +2,6 @@ package me.coley.analysis.value;
 
 import me.coley.analysis.TestUtils;
 import me.coley.analysis.util.FrameUtil;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -18,7 +17,7 @@ public class TestLinearValuePropagation extends TestUtils {
 		MethodNode method = getMethod(node, "helloSplit");
 		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "sayTwoWords");
-		Object[] value = FrameUtil.getStackArguments(frames[index], 2);
+		Object[] value = FrameUtil.getStackArgumentLiterals(frames[index], 2);
 		assertEquals("Hello", value[0]);
 		assertEquals("World", value[1]);
 	}
@@ -29,7 +28,7 @@ public class TestLinearValuePropagation extends TestUtils {
 		MethodNode method = getMethod(node, "helloVariables");
 		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
-		String value = FrameUtil.getTopStack(frames[index]);
+		String value = FrameUtil.getTopStackLiteral(frames[index]);
 		assertEquals("Hello World", value);
 	}
 
@@ -39,7 +38,7 @@ public class TestLinearValuePropagation extends TestUtils {
 		MethodNode method = getMethod(node, "helloVariables");
 		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
-		String value = FrameUtil.getTopStack(frames[index]);
+		String value = FrameUtil.getTopStackLiteral(frames[index]);
 		assertEquals("Hello World", value);
 	}
 
@@ -49,7 +48,7 @@ public class TestLinearValuePropagation extends TestUtils {
 		MethodNode method = getMethod(node, "helloVariables");
 		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
-		String value = FrameUtil.getTopStack(frames[index]);
+		String value = FrameUtil.getTopStackLiteral(frames[index]);
 		assertEquals("Hello World", value);
 	}
 }
