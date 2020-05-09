@@ -11,18 +11,18 @@ The analyzer is highly configurable so that it can be customized to your persona
 Add Jitpack to your repositories
 ```xml
 <repositories>
-	<repository>
-	    <id>jitpack.io</id>
-	    <url>https://jitpack.io</url>
-	</repository>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
 </repositories>
 ```
 ```groovy
 allprojects {
-	repositories {
-		...
-		maven { url 'https://jitpack.io' }
-	}
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
 }
 ```
 Add SimAnalyzer dependency _(where `VERSION` is the latest version)_
@@ -44,27 +44,28 @@ implementation 'com.github.Col-E:SimAnalyzer:VERSION'
 // to enhance existing function with outside information provided by you
 SimAnalzer analyzer = new SimAnalyzer(new SimInterpreter()) {
     @Override
-	protected ResolvableExceptionFactory createExceptionFactory() {
+    protected ResolvableExceptionFactory createExceptionFactory() {
         // Allow overriding error-resolving logic
-		return super.createExceptionFactory();
-	}
+        return super.createExceptionFactory();
+    }
 
-	@Override
-	protected StaticInvokeFactory createStaticInvokeFactory() {
+    @Override
+    protected StaticInvokeFactory createStaticInvokeFactory() {
         // Allow managing the values of static invoke calls
-		return super.createStaticInvokeFactory();
-	}
+        return super.createStaticInvokeFactory();
+    }
 
-	@Override
-	protected StaticGetFactory createStaticGetFactory() {
-		return super.createStaticGetFactory();
-	}
+    @Override
+    protected StaticGetFactory createStaticGetFactory() {
+        // Allow managing the values of static invoke calls
+        return super.createStaticGetFactory();
+    }
 
-	@Override
-	protected TypeChecker createTypeChecker() {
+    @Override
+    protected TypeChecker createTypeChecker() {
         // Allow better type checking, default uses system classpath
-		return super.createTypeChecker();
-	}
+        return super.createTypeChecker();
+    }
 };
 // Determine if we want to skip dead-code blocks
 analyzer.setSkipDeadCodeBlocks(true / false);
