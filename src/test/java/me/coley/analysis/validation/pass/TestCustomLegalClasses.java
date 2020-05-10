@@ -1,7 +1,6 @@
 package me.coley.analysis.validation.pass;
 
 import me.coley.analysis.TestUtils;
-import me.coley.analysis.util.FrameUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.tree.ClassNode;
@@ -22,6 +21,6 @@ public class TestCustomLegalClasses extends TestUtils {
 	public void testClasses(String classPath) {
 		ClassNode node = getFromName(classPath);
 		for (MethodNode mn : node.methods)
-			assertDoesNotThrow(() -> FrameUtil.getFrames(node.name, mn));
+			assertDoesNotThrow(() -> TestUtils.getFrames(node.name, mn));
 	}
 }

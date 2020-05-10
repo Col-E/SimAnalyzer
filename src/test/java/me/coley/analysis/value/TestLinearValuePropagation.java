@@ -15,7 +15,7 @@ public class TestLinearValuePropagation extends TestUtils {
 	public void testImmediate() throws AnalyzerException {
 		ClassNode node = getFromName("bin/javac/HelloWorld.class");
 		MethodNode method = getMethod(node, "helloSplit");
-		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
+		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "sayTwoWords");
 		Object[] value = FrameUtil.getStackArgumentLiterals(frames[index], 2);
 		assertEquals("Hello", value[0]);
@@ -26,7 +26,7 @@ public class TestLinearValuePropagation extends TestUtils {
 	public void testConcatStrings() throws AnalyzerException {
 		ClassNode node = getFromName("bin/javac/HelloWorld.class");
 		MethodNode method = getMethod(node, "helloVariables");
-		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
+		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
 		String value = FrameUtil.getTopStackLiteral(frames[index]);
 		assertEquals("Hello World", value);
@@ -36,7 +36,7 @@ public class TestLinearValuePropagation extends TestUtils {
 	public void testConcatStrings_GotoOrder() throws AnalyzerException {
 		ClassNode node = getFromName("bin/custom/misc/HelloWorldGotoOrdering.class");
 		MethodNode method = getMethod(node, "helloVariables");
-		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
+		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
 		String value = FrameUtil.getTopStackLiteral(frames[index]);
 		assertEquals("Hello World", value);
@@ -46,7 +46,7 @@ public class TestLinearValuePropagation extends TestUtils {
 	public void testConcatStrings_SwapOrder() throws AnalyzerException {
 		ClassNode node = getFromName("bin/custom/misc/HelloWorldSwapOrdering.class");
 		MethodNode method = getMethod(node, "helloVariables");
-		Frame<AbstractValue>[] frames = FrameUtil.getFrames(node.name, method);
+		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
 		String value = FrameUtil.getTopStackLiteral(frames[index]);
 		assertEquals("Hello World", value);

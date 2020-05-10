@@ -1,5 +1,6 @@
 package me.coley.analysis;
 
+import me.coley.analysis.value.AbstractValue;
 import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -7,6 +8,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.Frame;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,5 +100,22 @@ public class TestUtils {
 			i++;
 		}
 		throw new IllegalStateException("No result");
+	}
+
+	/**
+	 * Analyze and retch the frames of the given method, if it is valid.
+	 *
+	 * @param owner
+	 * 		Name of method's defining class.
+	 * @param method
+	 * 		Method instance.
+	 *
+	 * @return Analyzed frames of the method.
+	 *
+	 * @throws AnalyzerException
+	 * 		When analysis fails.
+	 */
+	public static Frame<AbstractValue>[] getFrames(String owner, MethodNode method) throws AnalyzerException {
+		return new SimAnalyzer(new SimInterpreter()).analyze(owner, method);
 	}
 }

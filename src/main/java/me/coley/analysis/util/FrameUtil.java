@@ -13,22 +13,6 @@ import org.objectweb.asm.tree.analysis.Frame;
  * @author Matt
  */
 public class FrameUtil {
-	/**
-	 * Analyze and retch the frames of the given method, if it is valid.
-	 *
-	 * @param owner
-	 * 		Name of method's defining class.
-	 * @param method
-	 * 		Method instance.
-	 *
-	 * @return Analyzed frames of the method.
-	 *
-	 * @throws AnalyzerException
-	 * 		When analysis fails.
-	 */
-	public static Frame<AbstractValue>[] getFrames(String owner, MethodNode method) throws AnalyzerException {
-		return new SimAnalyzer(new SimInterpreter()).analyze(owner, method);
-	}
 
 	/**
 	 * Fetch the top stack in the frame.

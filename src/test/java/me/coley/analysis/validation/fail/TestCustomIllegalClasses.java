@@ -1,7 +1,6 @@
 package me.coley.analysis.validation.fail;
 
 import me.coley.analysis.TestUtils;
-import me.coley.analysis.util.FrameUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.tree.ClassNode;
@@ -19,6 +18,6 @@ public class TestCustomIllegalClasses extends TestUtils {
 	public void testClasses(String classPath) {
 		ClassNode node = getFromName(classPath);
 		for (MethodNode mn : node.methods)
-			assertThrows(AnalyzerException.class, () -> FrameUtil.getFrames(node.name, mn));
+			assertThrows(AnalyzerException.class, () -> TestUtils.getFrames(node.name, mn));
 	}
 }
