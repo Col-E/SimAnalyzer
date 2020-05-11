@@ -4,6 +4,18 @@ SimAnalyzer is an analyzer that computes the values of primitives and basic obje
 Additional features like dead code detection are also available. 
 The analyzer is highly configurable so that it can be customized to your personal use case with relative ease.
 
+## Features
+
+* Highly configurable
+    * Provide custom type comparator for inheritance, required for accurate frame generation if custom types are defined in the analyzed code.
+    * Provide custom exception factory, allowing for custom handling of resolvable errors.
+    * Provide custom static-invoke factory, allowing custom defined return values of static method calls.
+    * Provide custom static-get factory, allowing custom defined values of static fields.
+* Detect dead code
+    * By default dead code is skipped entirely, resulting in `null` values for frames at the indices of instructions within dead code blocks.
+* Track instructions that contribute to values
+    * Values track the instructions that directly contribute to their value
+
 ## Usage
 
 ### Add dependency
