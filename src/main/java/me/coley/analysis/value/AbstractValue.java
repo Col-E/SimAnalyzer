@@ -3,8 +3,11 @@ package me.coley.analysis.value;
 import me.coley.analysis.TypeChecker;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.analysis.Value;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -15,8 +18,17 @@ import java.util.Objects;
 public abstract class AbstractValue implements Value {
 	protected final Type type;
 	protected final Object value;
+	protected final List<AbstractInsnNode> insns;
 
-	protected AbstractValue(Type type, final Object value) {
+	protected AbstractValue(AbstractInsnNode insn, Type type, final Object value) {
+		this(insn == null ? Collections.emptyList() : Collections.singletonList(insn), type, value);
+	}
+
+	protected AbstractValue(List<AbstractInsnNode> insns, Type type, final Object value) {
+		// Set contributing insns
+		if (insns == null)
+			insns = Collections.emptyList();
+		this.insns = insns;
 		// Validate type must exist if value given
 		if (type == null && value != null)
 			throw new IllegalStateException("Analyzer value wrapper was given a value but no type information");
@@ -28,11 +40,12 @@ public abstract class AbstractValue implements Value {
 	}
 
 	/**
+	 * @param insn The instruction of the value.
 	 * @param typeChecker Type checker for comparison against other types.
 	 * @param type Type.
 	 * @return Type value.
 	 */
-	public static AbstractValue ofDefault(TypeChecker typeChecker, Type type) {
+	public static AbstractValue ofDefault(AbstractInsnNode insn, TypeChecker typeChecker, Type type) {
 		if (type == null)
 			return UninitializedValue.UNINITIALIZED_VALUE;
 		switch(type.getSort()) {
@@ -43,22 +56,30 @@ public abstract class AbstractValue implements Value {
 			case Type.BYTE:
 			case Type.SHORT:
 			case Type.INT:
-				return PrimitiveValue.ofInt(0);
+				return PrimitiveValue.ofInt(insn, 0);
 			case Type.FLOAT:
-				return PrimitiveValue.ofFloat(0F);
+				return PrimitiveValue.ofFloat(insn, 0F);
 			case Type.LONG:
-				return PrimitiveValue.ofLong(0L);
+				return PrimitiveValue.ofLong(insn, 0L);
 			case Type.DOUBLE:
-				return PrimitiveValue.ofDouble(0D);
+				return PrimitiveValue.ofDouble(insn, 0D);
 			case Type.ARRAY:
 			case Type.OBJECT:
-				if (type.equals(NullConstantValue.NULL_VALUE.getType()))
-					return NullConstantValue.NULL_VALUE;
-				return new VirtualValue(type, null, typeChecker);
+				if (type.equals(NullConstantValue.NULL_VALUE_TYPE))
+					return NullConstantValue.newNull(insn);
+				return new VirtualValue(insn, type, null, typeChecker);
 			default:
 				throw new IllegalStateException("Unsupported type: " + type);
 		}
 	}
+
+	/**
+	 * @param insn
+	 * 		Instruction to add to copy instance.
+	 *
+	 * @return Copy of current value, with additional instruction added.
+	 */
+	public abstract AbstractValue copy(AbstractInsnNode insn);
 
 	/**
 	 * @param other
@@ -118,6 +139,17 @@ public abstract class AbstractValue implements Value {
 		return type;
 	}
 
+	/**
+	 * Returns the instructions that contributed to the current value.
+	 * These instructions may not necessarily be in order due to merge behavior of two or more values.
+	 * Additionally, some values are not defined by instructions, such as parameter values.
+	 *
+	 * @return Instructions that contributed to the current value.
+	 */
+	public List<AbstractInsnNode> getInsns() {
+		return insns;
+	}
+
 	@Override
 	public int getSize() {
 		if (type == null)
@@ -137,35 +169,13 @@ public abstract class AbstractValue implements Value {
 	@Override
 	public abstract boolean equals(Object other);
 
-	/*{
-		if (other == this)
-			return true;
-		else if (other == UNINITIALIZED)
-			return false;
-		else if (other == NULL)
-			return false;
-		else if(other instanceof AbstractValue) {
-			AbstractValue ov = (AbstractValue) other;
-			if(type == null)
-				// RET: Are both types null?
-				return ov.type == null;
-			else if(value == null)
-				// RET: Do they share a parent? And is the other value also null?
-				return (type.equals(ov.type) || isParent(type, ov.type)) && ov.value == null;
-			else
-				// RET: Are the values equal? Do they share a parent?
-				return value.equals(ov.value) && (type.equals(ov.type) || isParent(type, ov.type));
-		}
-		return false;
-	}*/
-
 	@Override
 	public String toString() {
 		if (this == UninitializedValue.UNINITIALIZED_VALUE)
 			return "<UNINITIALIZED>";
-		else if (this == NullConstantValue.NULL_VALUE)
+		else if (this instanceof NullConstantValue)
 			return "<NULL>";
-		else if (this == ReturnAddressValue.RETURN_ADDRESS_VALUE)
+		else if (this instanceof ReturnAddressValue)
 			return "<JSR_RET>";
 		else if (isNull())
 			return "<NULL:" + type + ">";

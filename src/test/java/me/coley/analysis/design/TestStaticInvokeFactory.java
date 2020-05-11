@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
@@ -57,12 +58,12 @@ public class TestStaticInvokeFactory extends TestUtils {
 
 	static class StaticInvokeFactoryTestImpl extends StaticInvokeFactory {
 		@Override
-		public AbstractValue invokeStatic(String owner, String name, String desc, List<?
+		public AbstractValue invokeStatic(MethodInsnNode insn, List<?
 				extends AbstractValue> arguments) {
-			if (name.equals("getHello")) {
-				return SimulatedVirtualValue.ofString(null, "Hello World");
+			if (insn.name.equals("getHello")) {
+				return SimulatedVirtualValue.ofString((List<AbstractInsnNode>) null, null, "Hello World");
 			}
-			return super.invokeStatic(owner, name, desc, arguments);
+			return super.invokeStatic(insn, arguments);
 		}
 	}
 }

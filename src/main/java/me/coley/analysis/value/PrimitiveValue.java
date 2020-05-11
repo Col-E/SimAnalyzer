@@ -3,6 +3,11 @@ package me.coley.analysis.value;
 import me.coley.analysis.Unresolved;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+
+import java.util.List;
+
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value wrapper for primitives.
@@ -13,103 +18,245 @@ public class PrimitiveValue extends AbstractValue {
 	/**
 	 * Create primitive when the value is given.
 	 *
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param type
 	 * 		Type of primitive.
 	 * @param value
 	 * 		Value of primitive.
 	 */
-	protected PrimitiveValue(Type type, Object value) {
-		super(type, value);
+	protected PrimitiveValue(AbstractInsnNode insn, Type type, Object value) {
+		super(insn, type, value);
 	}
 
 	/**
 	 * Create primitive when the value is not given.
 	 *
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param type
 	 * 		Type of primitive.
 	 */
-	public PrimitiveValue(Type type) {
-		super(type, null);
+	public PrimitiveValue(AbstractInsnNode insn, Type type) {
+		super(insn, type, null);
 	}
 
 	/**
+	 * Create primitive when the value is not given.
+	 *
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param type
+	 * 		Type of primitive.
+	 * @param value
+	 * 		Value of primitive.
+	 */
+	public PrimitiveValue(List<AbstractInsnNode> insns, Type type, Object value) {
+		super(insns, type, value);
+	}
+
+	/**
+	 * Create primitive when the value is not given.
+	 *
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param type
+	 * 		Type of primitive.
+	 */
+	protected PrimitiveValue(List<AbstractInsnNode> insns, Type type) {
+		super(insns, type, null);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Int.
 	 *
 	 * @return int value.
 	 */
-	public static AbstractValue ofInt(int value) {
-		return new PrimitiveValue(Type.INT_TYPE, value);
+	public static AbstractValue ofInt(AbstractInsnNode insn, int value) {
+		return new PrimitiveValue(insn, Type.INT_TYPE, value);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Int.
+	 *
+	 * @return int value.
+	 */
+	public static AbstractValue ofInt(List<AbstractInsnNode> insns, int value) {
+		return new PrimitiveValue(insns, Type.INT_TYPE, value);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Character.
 	 *
 	 * @return char value.
 	 */
-	public static AbstractValue ofChar(char value) {
-		return new PrimitiveValue(Type.INT_TYPE, value);
+	public static AbstractValue ofChar(AbstractInsnNode insn, char value) {
+		return new PrimitiveValue(insn, Type.INT_TYPE, value);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Character.
+	 *
+	 * @return char value.
+	 */
+	public static AbstractValue ofChar(List<AbstractInsnNode> insns, char value) {
+		return new PrimitiveValue(insns, Type.INT_TYPE, value);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Byte.
 	 *
 	 * @return byte value.
 	 */
-	public static AbstractValue ofByte(byte value) {
-		return new PrimitiveValue(Type.INT_TYPE, value);
+	public static AbstractValue ofByte(AbstractInsnNode insn, byte value) {
+		return new PrimitiveValue(insn, Type.INT_TYPE, value);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Byte.
+	 *
+	 * @return byte value.
+	 */
+	public static AbstractValue ofByte(List<AbstractInsnNode> insns, byte value) {
+		return new PrimitiveValue(insns, Type.INT_TYPE, value);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Short.
 	 *
 	 * @return short value.
 	 */
-	public static AbstractValue ofShort(short value) {
-		return new PrimitiveValue(Type.INT_TYPE, value);
+	public static AbstractValue ofShort(AbstractInsnNode insn, short value) {
+		return new PrimitiveValue(insn, Type.INT_TYPE, value);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Short.
+	 *
+	 * @return short value.
+	 */
+	public static AbstractValue ofShort(List<AbstractInsnNode> insns, short value) {
+		return new PrimitiveValue(insns, Type.INT_TYPE, value);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Boolean.
 	 *
 	 * @return boolean value.
 	 */
-	public static AbstractValue ofBool(boolean value) {
-		return new PrimitiveValue(Type.INT_TYPE, value ? 1 : 0);
+	public static AbstractValue ofBool(AbstractInsnNode insn, boolean value) {
+		return new PrimitiveValue(insn, Type.INT_TYPE, value ? 1 : 0);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Boolean.
+	 *
+	 * @return boolean value.
+	 */
+	public static AbstractValue ofBool(List<AbstractInsnNode> insns, boolean value) {
+		return new PrimitiveValue(insns, Type.INT_TYPE, value ? 1 : 0);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Long.
 	 *
 	 * @return long value.
 	 */
-	public static AbstractValue ofLong(long value) {
-		return new PrimitiveValue(Type.LONG_TYPE, value);
+	public static AbstractValue ofLong(AbstractInsnNode insn, long value) {
+		return new PrimitiveValue(insn, Type.LONG_TYPE, value);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Long.
+	 *
+	 * @return long value.
+	 */
+	public static AbstractValue ofLong(List<AbstractInsnNode> insns, long value) {
+		return new PrimitiveValue(insns, Type.LONG_TYPE, value);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Float.
 	 *
 	 * @return float value.
 	 */
-	public static AbstractValue ofFloat(float value) {
-		return new PrimitiveValue(Type.FLOAT_TYPE, value);
+	public static AbstractValue ofFloat(AbstractInsnNode insn, float value) {
+		return new PrimitiveValue(insn, Type.FLOAT_TYPE, value);
 	}
 
 	/**
+	 * @param insns
+	 * 		The instructions of this value.
+	 * @param value
+	 * 		Float.
+	 *
+	 * @return float value.
+	 */
+	public static AbstractValue ofFloat(List<AbstractInsnNode> insns, float value) {
+		return new PrimitiveValue(insns, Type.FLOAT_TYPE, value);
+	}
+
+	/**
+	 * @param insn
+	 * 		The instruction of this value.
 	 * @param value
 	 * 		Double.
 	 *
 	 * @return double value.
 	 */
-	public static AbstractValue ofDouble(double value) {
-		return new PrimitiveValue(Type.DOUBLE_TYPE, value);
+	public static AbstractValue ofDouble(AbstractInsnNode insn, double value) {
+		return new PrimitiveValue(insn, Type.DOUBLE_TYPE, value);
+	}
+
+	/**
+	 * @param insns
+	 * 		The instruction of this value.
+	 * @param value
+	 * 		Double.
+	 *
+	 * @return double value.
+	 */
+	public static AbstractValue ofDouble(List<AbstractInsnNode> insns, double value) {
+		return new PrimitiveValue(insns, Type.DOUBLE_TYPE, value);
 	}
 
 	/**
@@ -148,168 +295,206 @@ public class PrimitiveValue extends AbstractValue {
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Adds this value to another.
 	 */
-	public PrimitiveValue add(AbstractValue other) {
+	public PrimitiveValue add(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, addN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, addN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Subtract this value by another.
 	 */
-	public PrimitiveValue sub(AbstractValue other) {
+	public PrimitiveValue sub(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, subN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, subN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Multiply this value by another.
 	 */
-	public PrimitiveValue mul(AbstractValue other) {
+	public PrimitiveValue mul(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, mulN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, mulN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Divide this value by another.
 	 */
-	public PrimitiveValue div(AbstractValue other) {
+	public PrimitiveValue div(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
+			return new PrimitiveValue(mergedInsns, common);
 		try {
-			return new PrimitiveValue(common, divN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common, divN((Number) value, (Number) other.value));
 		} catch(ArithmeticException ex) {
-			return new PrimitiveValue(common);
+			return new PrimitiveValue(mergedInsns, common);
 		}
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Get remainder of this value by another.
 	 */
-	public PrimitiveValue rem(AbstractValue other) {
+	public PrimitiveValue rem(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
+			return new PrimitiveValue(mergedInsns, common);
 		try {
-			return new PrimitiveValue(common, remN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common, remN((Number) value, (Number) other.value));
 		} catch(ArithmeticException ex) {
-			return new PrimitiveValue(common);
+			return new PrimitiveValue(mergedInsns, common);
 		}
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Shift this value by another.
 	 */
-	public PrimitiveValue shl(AbstractValue other) {
+	public PrimitiveValue shl(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, shlN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, shlN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Shift this value by another.
 	 */
-	public PrimitiveValue shr(AbstractValue other) {
+	public PrimitiveValue shr(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, shrN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, shrN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Shift this value by another.
 	 */
-	public PrimitiveValue ushr(AbstractValue other) {
+	public PrimitiveValue ushr(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, ushrN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, ushrN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Bitwise and this and another value.
 	 */
-	public PrimitiveValue and(AbstractValue other) {
+	public PrimitiveValue and(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, andN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, andN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Bitwise or this and another value.
 	 */
-	public PrimitiveValue or(AbstractValue other) {
+	public PrimitiveValue or(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (value == null || other.value == null)
-			return new PrimitiveValue(common);
+			return new PrimitiveValue(mergedInsns, common);
 		if (value instanceof Unresolved || other.value instanceof Unresolved)
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, orN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, orN((Number) value, (Number) other.value));
 	}
 
 	/**
+	 * @param opInsn
+	 * 		Instruction of the mathematical operation
 	 * @param other
 	 * 		Another value.
 	 *
 	 * @return Bitwise or this and another value.
 	 */
-	public PrimitiveValue xor(AbstractValue other) {
+	public PrimitiveValue xor(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
+		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
-			return new PrimitiveValue(common);
-		return new PrimitiveValue(common, xorN((Number) value, (Number) other.value));
+			return new PrimitiveValue(mergedInsns, common);
+		return new PrimitiveValue(mergedInsns, common, xorN((Number) value, (Number) other.value));
+	}
+
+	@Override
+	public AbstractValue copy(AbstractInsnNode insn) {
+		return new PrimitiveValue(combine(getInsns(), insn), getType(), getValue());
 	}
 
 	@Override

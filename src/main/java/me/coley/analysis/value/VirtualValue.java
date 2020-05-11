@@ -3,6 +3,11 @@ package me.coley.analysis.value;
 import me.coley.analysis.TypeChecker;
 import me.coley.analysis.Unresolved;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+
+import java.util.List;
+
+import static me.coley.analysis.util.CollectUtils.combine;
 
 /**
  * Value wrapper recording the type. Wrapped value is a placeholder and used to denote an unresolved value.
@@ -12,35 +17,53 @@ import org.objectweb.asm.Type;
 public class VirtualValue extends AbstractValue {
 	protected final TypeChecker typeChecker;
 
-	protected VirtualValue(Type type, Object value, TypeChecker typeChecker) {
-		super(type, value);
+	protected VirtualValue(AbstractInsnNode insn, Type type, Object value, TypeChecker typeChecker) {
+		super(insn, type, value);
+		this.typeChecker = typeChecker;
+	}
+
+	protected VirtualValue(List<AbstractInsnNode> insns, Type type, Object value, TypeChecker typeChecker) {
+		super(insns, type, value);
 		this.typeChecker = typeChecker;
 	}
 
 	/**
+	 * @param insn The instruction of this value.
 	 * @param typeChecker Type checker for comparison against other types.
 	 * @param type Type to virtualize.
 	 * @return Virtual value of type.
 	 */
-	public static VirtualValue ofVirtual(TypeChecker typeChecker, Type type) {
-		return new VirtualValue(type, new Unresolved(type), typeChecker);
+	public static VirtualValue ofVirtual(AbstractInsnNode insn, TypeChecker typeChecker, Type type) {
+		return new VirtualValue(insn, type, new Unresolved(type), typeChecker);
 	}
 
 	/**
+	 * @param insns The instructions of this value.
+	 * @param typeChecker Type checker for comparison against other types.
+	 * @param type Type to virtualize.
+	 * @return Virtual value of type.
+	 */
+	public static VirtualValue ofVirtual(List<AbstractInsnNode> insns, TypeChecker typeChecker, Type type) {
+		return new VirtualValue(insns, type, new Unresolved(type), typeChecker);
+	}
+
+	/**
+	 * @param insn The instruction of this value.
 	 * @param typeChecker Type checker for comparison against other types.
 	 * @param value The value / type of class.
 	 * @return Class value.
 	 */
-	public static VirtualValue ofClass(TypeChecker typeChecker, Type value) {
-		return new VirtualValue(Type.getObjectType("java/lang/Class"), value, typeChecker);
+	public static VirtualValue ofClass(AbstractInsnNode insn, TypeChecker typeChecker, Type value) {
+		return new VirtualValue(insn, Type.getObjectType("java/lang/Class"), value, typeChecker);
 	}
 
 	/**
+	 * @param insn The instruction of this value.
 	 * @param typeChecker Type checker for comparison against other types.
 	 * @param desc Method type descriptor.
 	 * @return Act on the current reference.
 	 */
-	public AbstractValue ofMethodRef(TypeChecker typeChecker, Type desc) {
+	public AbstractValue ofMethodRef(AbstractInsnNode insn, TypeChecker typeChecker, Type desc) {
 		// Validate desc
 		if (desc == null)
 			throw new IllegalStateException("Method descriptor must not be null");
@@ -55,15 +78,20 @@ public class VirtualValue extends AbstractValue {
 		if (retType.equals(Type.VOID_TYPE))
 			return null;
 		if (retType.getSort() <= Type.DOUBLE)
-			return new PrimitiveValue(retType);
-		return ofVirtual(typeChecker, retType);
+			return new PrimitiveValue(insn, retType);
+		return ofVirtual(insn, typeChecker, retType);
+	}
+
+	@Override
+	public AbstractValue copy(AbstractInsnNode insn) {
+		return new VirtualValue(combine(getInsns(), insn), getType(), getValue(), typeChecker);
 	}
 
 	@Override
 	public boolean canMerge(AbstractValue other) {
 		if(other == this)
 			return true;
-		else if(other == NullConstantValue.NULL_VALUE ||
+		else if(other instanceof NullConstantValue ||
 				other == UninitializedValue.UNINITIALIZED_VALUE ||
 				other == null)
 			return false;
@@ -93,7 +121,7 @@ public class VirtualValue extends AbstractValue {
 			return true;
 		else if (other == UninitializedValue.UNINITIALIZED_VALUE)
 			return false;
-		else if (other == NullConstantValue.NULL_VALUE)
+		else if (other instanceof NullConstantValue)
 			return false;
 		else if(other instanceof VirtualValue) {
 			VirtualValue rOther = (VirtualValue) other;

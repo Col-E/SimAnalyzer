@@ -1,6 +1,11 @@
 package me.coley.analysis.value;
 
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+
+import java.util.List;
+
+import static me.coley.analysis.util.CollectUtils.combine;
 
 /**
  * Value wrapper for return addresses.
@@ -8,10 +13,27 @@ import org.objectweb.asm.Type;
  * @author Matt
  */
 public class ReturnAddressValue extends AbstractValue {
-	public static final ReturnAddressValue RETURN_ADDRESS_VALUE = new ReturnAddressValue();
+	private ReturnAddressValue(AbstractInsnNode insn) {
+		super(insn, Type.VOID_TYPE, null);
+	}
 
-	private ReturnAddressValue() {
-		super(Type.VOID_TYPE, null);
+	private ReturnAddressValue(List<AbstractInsnNode> insns) {
+		super(insns, Type.VOID_TYPE, null);
+	}
+
+	/**
+	 * @param insn
+	 * 		Instruction of the value.
+	 *
+	 * @return Return address value.
+	 */
+	public static ReturnAddressValue newRet(AbstractInsnNode insn) {
+		return new ReturnAddressValue(insn);
+	}
+
+	@Override
+	public AbstractValue copy(AbstractInsnNode insn) {
+		return new ReturnAddressValue(combine(getInsns(), insn));
 	}
 
 	@Override

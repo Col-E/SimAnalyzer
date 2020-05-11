@@ -1,6 +1,9 @@
 package me.coley.analysis.value;
 
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+
+import java.util.List;
 
 /**
  * Value wrapper for uninitialized values.
@@ -11,7 +14,12 @@ public class UninitializedValue extends AbstractValue {
 	public static final AbstractValue UNINITIALIZED_VALUE = new UninitializedValue(null, null);
 
 	private UninitializedValue(Type type, Object value) {
-		super(type, value);
+		super((List<AbstractInsnNode>) null, type, value);
+	}
+
+	@Override
+	public AbstractValue copy(AbstractInsnNode insn) {
+		throw new IllegalStateException("Copying an uninitialized value should not occur!");
 	}
 
 	@Override

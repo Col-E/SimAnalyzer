@@ -1,6 +1,7 @@
 package me.coley.analysis;
 
 import me.coley.analysis.value.AbstractValue;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.util.List;
 
@@ -11,19 +12,14 @@ import java.util.List;
  */
 public class StaticInvokeFactory {
 	/**
-	 * @param owner
-	 * 		Method owner.
-	 * @param name
-	 * 		Method name.
-	 * @param desc
-	 * 		Method descriptor.
+	 * @param insn
+	 * 		Method instruction.
 	 * @param arguments
 	 * 		Arguments on the stack.
 	 *
 	 * @return Value of invoke. {@code null} for void types.
 	 */
-	public AbstractValue invokeStatic(String owner, String name, String desc, List<?
-			extends AbstractValue> arguments) {
+	public AbstractValue invokeStatic(MethodInsnNode insn, List<? extends AbstractValue> arguments) {
 		return null;
 	}
 }

@@ -1,10 +1,6 @@
 package me.coley.analysis.util;
 
-import me.coley.analysis.SimAnalyzer;
-import me.coley.analysis.SimInterpreter;
 import me.coley.analysis.value.AbstractValue;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
 /**

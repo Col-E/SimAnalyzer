@@ -2,7 +2,9 @@ package me.coley.analysis;
 
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.UninitializedValue;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.Interpreter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -49,5 +51,15 @@ public class SimFrame extends Frame<AbstractValue> {
 		}
 		// Update local
 		super.setLocal(index, value);
+	}
+
+	@Override
+	public boolean merge(Frame<? extends AbstractValue> frame, Interpreter<AbstractValue> interpreter) throws AnalyzerException {
+		return super.merge(frame, interpreter);
+	}
+
+	@Override
+	public boolean merge(Frame<? extends AbstractValue> frame, boolean[] localsUsed) {
+		return super.merge(frame, localsUsed);
 	}
 }

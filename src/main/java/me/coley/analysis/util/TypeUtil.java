@@ -125,7 +125,7 @@ public class TypeUtil {
 			return false;
 		// Null type and primitives do not mix.
 		// Null types and object types do.
-		if (childValue == NullConstantValue.NULL_VALUE && !isPrimitive(parent))
+		if (childValue instanceof NullConstantValue && !isPrimitive(parent))
 			return true;
 		// Uninitialized values are not subtypes
 		if (childValue == UninitializedValue.UNINITIALIZED_VALUE)
@@ -179,8 +179,8 @@ public class TypeUtil {
 			return true;
 		// Check if types are compatible
 		if (child.getSort() == parent.getSort()) {
-			AbstractValue host = AbstractValue.ofDefault(typeChecker, parent);
-			return host != null && host.canMerge(AbstractValue.ofDefault(typeChecker, child));
+			AbstractValue host = AbstractValue.ofDefault(null, typeChecker, parent);
+			return host != null && host.canMerge(AbstractValue.ofDefault(null, typeChecker, child));
 		}
 		return false;
 	}
