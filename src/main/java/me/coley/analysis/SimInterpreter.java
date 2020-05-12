@@ -368,7 +368,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				insnType = value.getType();
 				break;
 			case ASTORE:
-				if (!value.isReference() && value instanceof ReturnAddressValue)
+				if (!value.isReference() && !(value instanceof ReturnAddressValue))
 					throw new AnalyzerException(insn, "Expected a reference or return-address type.");
 				insnType = value.getType();
 				break;
