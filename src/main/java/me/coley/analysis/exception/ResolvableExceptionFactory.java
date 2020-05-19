@@ -5,12 +5,10 @@ import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.util.InsnUtil;
 import me.coley.analysis.util.TypeUtil;
 import me.coley.analysis.value.AbstractValue;
-import me.coley.analysis.value.UninitializedValue;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
