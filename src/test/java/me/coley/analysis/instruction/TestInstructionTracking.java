@@ -21,6 +21,8 @@ public class TestInstructionTracking extends TestUtils {
 		MethodNode method = getMethod(node, "helloVariables");
 		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
+		// TODO: The DUP/InvokeSpecial should be included because they act on the value that was created
+		//       that contributes
 		// The following is the disassembly of the method "helloVariables"
 		//
 		// Lines prefixed with ">>>>>>>>>>>>>" indicate they are contributing instructions
