@@ -59,6 +59,6 @@ public class NullConstantValue extends AbstractValue {
 
 	@Override
 	public boolean equals(Object other) {
-		return other == this;
+		return other instanceof NullConstantValue;
 	}
 }
