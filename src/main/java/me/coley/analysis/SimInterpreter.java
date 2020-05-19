@@ -862,7 +862,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			AbstractValue actual = values.get(i++);
 			if(!isSubTypeOfOrNull(typeChecker, actual, expected)) {
 				markBad(insn, exceptionFactory.unexpectedMethodArgType(expected, actual.getType(),
-						insn, actual, values, i, TypeMismatchKind.INVOKE_ARG_TYPE));
+						insn, actual, values, j - 1, TypeMismatchKind.INVOKE_ARG_TYPE));
 			}
 		}
 		// Get value

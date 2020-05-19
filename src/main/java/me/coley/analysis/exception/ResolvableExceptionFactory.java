@@ -1,13 +1,16 @@
 package me.coley.analysis.exception;
 
 import me.coley.analysis.TypeChecker;
+import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.util.InsnUtil;
 import me.coley.analysis.util.TypeUtil;
 import me.coley.analysis.value.AbstractValue;
+import me.coley.analysis.value.UninitializedValue;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
@@ -56,21 +59,21 @@ public class ResolvableExceptionFactory {
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the argument value is no longer null when stack-frames are filled out
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-					AbstractValue methodContext = frame.getStack(frame.getStackSize() - 1);
+					AbstractValue methodContext = FrameUtil.getTopStack(frame);
 					return TypeUtil.isSubTypeOfOrNull(typeChecker, methodContext, expectedType);
 				}, insn, "Expected type: " + expectedType);
 			case GETFIELD:
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the top of the stack matches the expected type
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-					AbstractValue fieldContext = frame.getStack(frame.getStackSize() - 1);
+					AbstractValue fieldContext = FrameUtil.getTopStack(frame);
 					return TypeUtil.isSubTypeOf(typeChecker, fieldContext.getType(), expectedType);
 				}, insn, "Expected type: " + expectedType);
 			case RETURN:
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the top of the stack matches the expected type
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-					AbstractValue returnValue = frame.getStack(frame.getStackSize() - 1);
+					AbstractValue returnValue = FrameUtil.getTopStack(frame);
 					return TypeUtil.isSubTypeOfOrNull(typeChecker, returnValue, expectedType);
 				}, insn, "Incompatible return type, found '" + actualType + "', expected: " +
 						expectedType, expectedType, actualValue);
@@ -144,6 +147,8 @@ public class ResolvableExceptionFactory {
 				((InvokeDynamicInsnNode) insn).desc :
 				((MethodInsnNode) insn).desc;
 		Type[] args = Type.getArgumentTypes(methodDescriptor);
+		if (argIndex >= args.length)
+			throw new IllegalStateException("Was given argument index >= number of actual arguments");
 		return new ResolvableAnalyzerException((methodNode, frames) -> {
 			// Validate that the argument value is no longer null when stack-frames are filled out
 			Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
