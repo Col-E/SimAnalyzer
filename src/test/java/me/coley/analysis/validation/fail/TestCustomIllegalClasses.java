@@ -1,11 +1,16 @@
 package me.coley.analysis.validation.fail;
 
 import me.coley.analysis.TestUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,5 +25,14 @@ public class TestCustomIllegalClasses extends TestUtils {
 		ClassNode node = getFromName(classPath);
 		for (MethodNode mn : node.methods)
 			assertThrows(AnalyzerException.class, () -> TestUtils.getFrames(node.name, mn));
+	}
+
+	@Test
+	public void testClassFailsInsteadOfInfiniteLooping() {
+		// This class file was picked out of a program that originally caused an infinite loop in the analyzer
+		// The bug has since been fixed, but this will track for regression.
+		ClassNode node = getFromName("bin/custom/illegal/flow/ConfusingJavacFlow.class");
+		for (MethodNode mn : node.methods)
+			assertTimeoutPreemptively(Duration.ofMillis(500), () -> assertThrows(AnalyzerException.class, () -> TestUtils.getFrames(node.name, mn)));
 	}
 }
