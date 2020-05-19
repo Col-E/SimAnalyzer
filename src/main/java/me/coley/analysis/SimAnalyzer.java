@@ -123,7 +123,6 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 						ClassLoader.getSystemClassLoader());
 				return clsParent.isAssignableFrom(clsChild);
 			} catch(Throwable t) {
-				t.printStackTrace();
 				return false;
 			}
 		};
@@ -168,7 +167,9 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 *        {@code false} for fall-through behavior.
 	 */
 	public void setOpaqueJump(AbstractInsnNode insn, boolean gotoDestination) {
-		opaqueHandler.setOpaqueJump(insn, gotoDestination);
+		if (skipDeadCodeBlocks) {
+			opaqueHandler.setOpaqueJump(insn, gotoDestination);
+		}
 	}
 
 	/**
