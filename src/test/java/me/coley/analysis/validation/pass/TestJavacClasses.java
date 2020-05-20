@@ -15,6 +15,7 @@ public class TestJavacClasses extends TestUtils {
 			"bin/javac/PrimitiveCasting.class",
 			"bin/javac/PrimitiveMath.class",
 			"bin/javac/FindNArray.class",
+			"bin/javac/SetItToNull.class",
 			"bin/javac/ZipIO.class"
 	})
 	public void testClasses(String classPath) {
