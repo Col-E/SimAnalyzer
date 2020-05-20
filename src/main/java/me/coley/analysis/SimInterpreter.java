@@ -1,8 +1,10 @@
 package me.coley.analysis;
 
+import me.coley.analysis.cfg.BlockHandler;
 import me.coley.analysis.exception.ResolvableExceptionFactory;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.exception.TypeMismatchKind;
+import me.coley.analysis.util.FlowUtil;
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.NullConstantValue;
 import me.coley.analysis.value.PrimitiveValue;
@@ -42,6 +44,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	private ResolvableExceptionFactory exceptionFactory;
 	private StaticInvokeFactory staticInvokeFactory;
 	private StaticGetFactory staticGetFactory;
+	private BlockHandler blockHandler;
 	private TypeChecker typeChecker;
 	private SimAnalyzer analyzer;
 
@@ -112,6 +115,21 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	 */
 	public void setStaticGetFactory(StaticGetFactory staticGetFactory) {
 		this.staticGetFactory = staticGetFactory;
+	}
+
+	/**
+	 * @param blockHandler
+	 * 		Block handler to determine scope.
+	 */
+	public void setBlockHandler(BlockHandler blockHandler) {
+		this.blockHandler = blockHandler;
+	}
+
+	/**
+	 * @return Block handler to determine scope.
+	 */
+	public BlockHandler getBlockHandler() {
+		return blockHandler;
 	}
 
 	/**
@@ -531,10 +549,14 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				return newValue(combine(value.getInsns(), insn), Type.INT_TYPE);
 			case MONITORENTER:
 			case MONITOREXIT:
+				if (!value.isReference())
+					throw new AnalyzerException(insn, "Expected a reference type for monitor.");
+				return null;
 			case IFNULL:
 			case IFNONNULL:
 				if (!value.isReference())
-					throw new AnalyzerException(insn, "Expected a reference type.");
+					throw new AnalyzerException(insn, "Expected a reference type ifnull/nonnull.");
+				value.setNullCheckedBy((JumpInsnNode) insn);
 				return null;
 			default:
 				throw new IllegalStateException();
@@ -890,7 +912,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		AbstractValue ownerValue = values.get(0);
 		if(ownerValue == UninitializedValue.UNINITIALIZED_VALUE)
 			throw new AnalyzerException(insn, "Cannot call method on uninitialized reference");
-		else if (ownerValue instanceof NullConstantValue && !isMethodAddSuppressed(min)) {
+		else if (ownerValue instanceof NullConstantValue && !isMethodAddSuppressed(min) &&
+				!FlowUtil.isNullChecked(getBlockHandler(), ownerValue, insn)) {
 			markBad(insn, exceptionFactory.unexpectedNullReference(
 					min, ownerValue, values, TypeMismatchKind.INVOKE_HOST_NULL));
 			return newValue(insn, Type.getMethodType(min.desc).getReturnType());
@@ -912,6 +935,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				VirtualValue virtualOwner = (VirtualValue) ownerValue;
 				return virtualOwner.ofMethodRef(insn, typeChecker, Type.getMethodType(((MethodInsnNode) insn).desc));
 			}
+			// Check if we have a null value that has been null checked
+			if (ownerValue instanceof NullConstantValue && FlowUtil.isNullChecked(getBlockHandler(), ownerValue, insn))
+				return newValue(insn, Type.getMethodType(min.desc).getReturnType());
 			throw new AnalyzerException(insn, "Virtual method context could not be resolved");
 		}
 	}

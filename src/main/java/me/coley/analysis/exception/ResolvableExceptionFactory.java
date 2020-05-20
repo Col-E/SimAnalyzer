@@ -1,10 +1,13 @@
 package me.coley.analysis.exception;
 
 import me.coley.analysis.TypeChecker;
+import me.coley.analysis.cfg.BlockHandler;
+import me.coley.analysis.util.FlowUtil;
 import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.util.InsnUtil;
 import me.coley.analysis.util.TypeUtil;
 import me.coley.analysis.value.AbstractValue;
+import me.coley.analysis.value.NullConstantValue;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
@@ -23,13 +26,17 @@ import static org.objectweb.asm.Opcodes.INVOKEDYNAMIC;
  */
 public class ResolvableExceptionFactory {
 	private final TypeChecker typeChecker;
+	private final BlockHandler blockHandler;
 
 	/**
 	 * @param typeChecker
 	 * 		Type checker for comparison against other types.
+	 * @param blockHandler
+	 * 		Block handler to determine scope.
 	 */
-	public ResolvableExceptionFactory(TypeChecker typeChecker) {
+	public ResolvableExceptionFactory(TypeChecker typeChecker, BlockHandler blockHandler) {
 		this.typeChecker = typeChecker;
+		this.blockHandler = blockHandler;
 	}
 
 	/**
@@ -109,9 +116,12 @@ public class ResolvableExceptionFactory {
 		return new ResolvableAnalyzerException((methodNode, frames) -> {
 			// Validate that the owner value is no longer null when stack-frames are filled out
 			Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-			// TODO: Validate the stack index is correct here
 			AbstractValue methodContext =
 					frame.getStack(frame.getStackSize() - (args.length + 1));
+			// Check against safe null
+			if (methodContext instanceof NullConstantValue && FlowUtil.isNullChecked(blockHandler, methodContext, insn))
+				return true;
+			// Check types
 			return TypeUtil.isSubTypeOf(typeChecker, methodContext.getType(), owner);
 		}, insn, "Method owner does not match type on stack");
 	}

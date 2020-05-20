@@ -1,7 +1,10 @@
 package me.coley.analysis;
 
+import me.coley.analysis.cfg.BlockHandler;
 import me.coley.analysis.exception.ResolvableAnalyzerException;
 import me.coley.analysis.exception.ResolvableExceptionFactory;
+import me.coley.analysis.util.FlowUtil;
+import me.coley.analysis.util.InternalAnalyzerHackery;
 import me.coley.analysis.value.AbstractValue;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
@@ -19,10 +22,13 @@ import java.util.Map;
  * @author Matt
  */
 public class SimAnalyzer extends Analyzer<AbstractValue> {
-	private final OpaqueHandler opaqueHandler = new OpaqueHandler(this);
+	private final InternalAnalyzerHackery hackery = new InternalAnalyzerHackery(this);
+	private final OpaqueHandler opaqueHandler = new OpaqueHandler(hackery);
+	private final BlockHandler blockHandler = new BlockHandler();
 	private final SimInterpreter interpreter;
 	private boolean throwUnresolvedAnalyzerErrors = true;
 	private boolean skipDeadCodeBlocks = true;
+	private MethodNode method;
 
 	/**
 	 * Create analyzer.
@@ -34,6 +40,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		super(interpreter);
 		this.interpreter = interpreter;
 		this.interpreter.setAnalyzer(this);
+		this.interpreter.setBlockHandler(getBlockHandler());
 		this.interpreter.setExceptionFactory(createExceptionFactory());
 		this.interpreter.setStaticInvokeFactory(createStaticInvokeFactory());
 		this.interpreter.setStaticGetFactory(createStaticGetFactory());
@@ -42,8 +49,10 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 
 	@Override
 	public Frame<AbstractValue>[] analyze(String owner, MethodNode method) throws AnalyzerException {
+		this.method = method;
+		blockHandler.setMethod(method);
 		Frame<AbstractValue>[] values = super.analyze(owner, method);
-		// If the interpeter has problems, check if they've been resolved by checking frames
+		// If the interpreter has problems, check if they've been resolved by checking frames
 		if (interpreter.hasReportedProblems()) {
 			// Check if the error logged no longer applies given the stack analysis results
 			// (due to flow control most likely)
@@ -73,7 +82,18 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	}
 
 	@Override
+	protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
+		blockHandler.add(insnIndex, successorIndex);
+		return true;
+	}
+
+	@Override
 	protected void newControlFlowEdge(int insnIndex, int successorIndex) {
+		// Create block when necessary
+		if (FlowUtil.isFlowModifier(method, insnIndex, successorIndex)) {
+			blockHandler.add(insnIndex, successorIndex);
+		}
+		// Modify internal ASM logic to bypass dead code regions
 		if (skipDeadCodeBlocks) {
 			opaqueHandler.onVisitControlFlowEdge(insnIndex, successorIndex);
 		}
@@ -85,7 +105,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 * @return Exception factory for interpreter to use.
 	 */
 	protected ResolvableExceptionFactory createExceptionFactory() {
-		return new ResolvableExceptionFactory(createTypeChecker());
+		return new ResolvableExceptionFactory(createTypeChecker(), getBlockHandler());
 	}
 
 	/**
@@ -177,5 +197,12 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 */
 	public OpaqueHandler getOpaqueHandler() {
 		return opaqueHandler;
+	}
+
+	/**
+	 * @return Block manager.
+	 */
+	public BlockHandler getBlockHandler() {
+		return blockHandler;
 	}
 }

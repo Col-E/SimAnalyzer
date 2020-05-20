@@ -34,7 +34,7 @@ public class NullConstantValue extends AbstractValue {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return new NullConstantValue(combine(getInsns(), insn));
+		return onCopy(new NullConstantValue(combine(getInsns(), insn)));
 	}
 
 	@Override

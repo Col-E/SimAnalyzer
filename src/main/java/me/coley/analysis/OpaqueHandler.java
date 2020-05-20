@@ -1,12 +1,10 @@
 package me.coley.analysis;
 
-import me.coley.analysis.util.InsnUtil;
+import me.coley.analysis.util.InternalAnalyzerHackery;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.analysis.Analyzer;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +17,7 @@ import static me.coley.analysis.OpaquePredicateType.*;
  */
 public class OpaqueHandler {
 	private final Map<AbstractInsnNode, OpaquePredicateType> opaqueJumpMap = new HashMap<>();
-	private final SimAnalyzer analyzer;
+	private final InternalAnalyzerHackery hackery;
 	private boolean hasHitOpaquePredicate;
 	private boolean doesOpaqueJumpGotoDestination;
 	private LabelNode destination;
@@ -27,11 +25,11 @@ public class OpaqueHandler {
 	/**
 	 * Initialize handler.
 	 *
-	 * @param analyzer
-	 * 		Owner analyzer.
+	 * @param hackery
+	 * 		Analyzer hacker.
 	 */
-	public OpaqueHandler(SimAnalyzer analyzer) {
-		this.analyzer = analyzer;
+	public OpaqueHandler(InternalAnalyzerHackery hackery) {
+		this.hackery = hackery;
 	}
 
 	/**
@@ -46,7 +44,7 @@ public class OpaqueHandler {
 	public void onVisitControlFlowEdge(int insnIndex, int successorIndex) {
 		if (hasHitOpaquePredicate && doesOpaqueJumpGotoDestination) {
 			int fallthroughIndex = insnIndex + 1;
-			stopAnalyzerFromGoingToFallthrough(fallthroughIndex);
+			hackery.stopAnalyzerFromGoingToFallthrough(fallthroughIndex, destination);
 		}
 		// Reset opaque predicate marker
 		hasHitOpaquePredicate = false;
@@ -67,37 +65,6 @@ public class OpaqueHandler {
 		this.doesOpaqueJumpGotoDestination = gotoDestination;
 		if (insn instanceof JumpInsnNode)
 			this.destination = ((JumpInsnNode) insn).label;
-	}
-
-	/**
-	 * Negates the internal ASM analyzer logic that visits the fall-through of a
-	 * {@link JumpInsnNode}.
-	 *
-	 * @param fallthroughIndex
-	 * 		Index in instructions where fallthrough starts.
-	 */
-	private void stopAnalyzerFromGoingToFallthrough(int fallthroughIndex) {
-		try {
-			// inInstructionsToProcess[fallthroughIndex] = false;
-			// instructionsToProcess[numInstructionsToProcess - 1] = destinationLabelIndex;
-			Field f_inInstructionsToProcess = Analyzer.class.getDeclaredField(
-					"inInstructionsToProcess");
-			Field f_instructionsToProcess = Analyzer.class.getDeclaredField(
-					"instructionsToProcess");
-			Field f_numInstructionsToProcess = Analyzer.class.getDeclaredField(
-					"numInstructionsToProcess");
-			f_inInstructionsToProcess.setAccessible(true);
-			f_instructionsToProcess.setAccessible(true);
-			f_numInstructionsToProcess.setAccessible(true);
-			boolean[] inInstructionsToProcess =
-					(boolean[]) f_inInstructionsToProcess.get(analyzer);
-			int[] instructionsToProcess = (int[]) f_instructionsToProcess.get(analyzer);
-			int numInstructionsToProcess = (int) f_numInstructionsToProcess.get(analyzer);
-			inInstructionsToProcess[fallthroughIndex] = false;
-			instructionsToProcess[numInstructionsToProcess - 1] = InsnUtil.index(destination);
-		} catch(Throwable t) {
-			throw new IllegalStateException("Did the analyzer internals change?", t);
-		}
 	}
 
 	/**

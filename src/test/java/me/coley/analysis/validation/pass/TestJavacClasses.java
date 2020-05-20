@@ -16,7 +16,8 @@ public class TestJavacClasses extends TestUtils {
 			"bin/javac/PrimitiveMath.class",
 			"bin/javac/FindNArray.class",
 			"bin/javac/SetItToNull.class",
-			"bin/javac/ZipIO.class"
+			"bin/javac/ZipIO.class",
+			"bin/javac/Type.class"
 	})
 	public void testClasses(String classPath) {
 		ClassNode node = getFromName(classPath);

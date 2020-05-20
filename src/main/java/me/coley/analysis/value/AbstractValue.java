@@ -2,8 +2,10 @@ package me.coley.analysis.value;
 
 import me.coley.analysis.TypeChecker;
 import me.coley.analysis.util.TypeUtil;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.analysis.Value;
 
 import java.util.Collections;
@@ -19,6 +21,8 @@ public abstract class AbstractValue implements Value {
 	protected final Type type;
 	protected final Object value;
 	protected final List<AbstractInsnNode> insns;
+	private JumpInsnNode nullCheck;
+	private AbstractValue copySource;
 
 	protected AbstractValue(AbstractInsnNode insn, Type type, final Object value) {
 		this(insn == null ? Collections.emptyList() : Collections.singletonList(insn), type, value);
@@ -80,6 +84,20 @@ public abstract class AbstractValue implements Value {
 	 * @return Copy of current value, with additional instruction added.
 	 */
 	public abstract AbstractValue copy(AbstractInsnNode insn);
+
+	/**
+	 * Copies any additional values from the current value to the given copy.
+	 *
+	 * @param copy
+	 * 		Copied value.
+	 *
+	 * @return Copied value.
+	 */
+	protected AbstractValue onCopy(AbstractValue copy) {
+		copy.setNullCheckedBy(getNullCheck());
+		copy.copySource = this;
+		return copy;
+	}
 
 	/**
 	 * @param other
@@ -148,6 +166,25 @@ public abstract class AbstractValue implements Value {
 	 */
 	public List<AbstractInsnNode> getInsns() {
 		return insns;
+	}
+
+	/**
+	 * @param nullCheck
+	 * 		Instruction that checks the current value against {@code null}.
+	 * 		Either {@link Opcodes#IFNULL} or {@link Opcodes#IFNONNULL}.
+	 */
+	public void setNullCheckedBy(JumpInsnNode nullCheck) {
+		this.nullCheck = nullCheck;
+		if (copySource != null)
+			copySource.setNullCheckedBy(nullCheck);
+	}
+
+	/**
+	 * @return Instruction that checks the current value against {@code null}.
+	 * Either {@link Opcodes#IFNULL} or {@link Opcodes#IFNONNULL}.
+	 */
+	public JumpInsnNode getNullCheck() {
+		return nullCheck;
 	}
 
 	@Override

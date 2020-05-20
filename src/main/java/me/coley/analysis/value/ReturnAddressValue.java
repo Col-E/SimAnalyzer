@@ -33,7 +33,7 @@ public class ReturnAddressValue extends AbstractValue {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return new ReturnAddressValue(combine(getInsns(), insn));
+		return onCopy(new ReturnAddressValue(combine(getInsns(), insn)));
 	}
 
 	@Override

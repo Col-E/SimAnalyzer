@@ -22,3 +22,8 @@ out/
 *___jb_*___
 /target/
 /bin/
+
+# Internal testing
+
+PrivateTests.java
+src/test/resources/private

@@ -53,12 +53,27 @@ public class TestUtils {
 	 */
 	public static ClassNode getFromName(String path) {
 		try {
-			ClassReader cr = new ClassReader(Files.readAllBytes(getClasspathFile(path).toPath()));
+			return getFromBytes(Files.readAllBytes(getClasspathFile(path).toPath()));
+		} catch(IOException ex) {
+			Assertions.fail(ex);
+			throw new IllegalStateException();
+		}
+	}
+
+	/**
+	 * @param clazz
+	 * 		Bytecode of class.
+	 *
+	 * @return Class node.
+	 */
+	public static ClassNode getFromBytes(byte[] clazz) {
+		try {
+			ClassReader cr = new ClassReader(clazz);
 			ClassNode node = new ClassNode();
 			cr.accept(node, ClassReader.SKIP_FRAMES);
 			return node;
-		} catch(IOException ex) {
-			Assertions.fail(ex);
+		} catch(Throwable t) {
+			Assertions.fail(t);
 			throw new IllegalStateException();
 		}
 	}
@@ -116,6 +131,11 @@ public class TestUtils {
 	 * 		When analysis fails.
 	 */
 	public static Frame<AbstractValue>[] getFrames(String owner, MethodNode method) throws AnalyzerException {
-		return new SimAnalyzer(new SimInterpreter()).analyze(owner, method);
+		SimInterpreter interpreter = new SimInterpreter();
+		SimAnalyzer analyzer = new SimAnalyzer(interpreter);
+		Frame<AbstractValue>[] frames = analyzer.analyze(owner, method);
+		if (interpreter.hasReportedProblems())
+			Assertions.fail(interpreter.getProblemInsns().values().iterator().next());
+		return frames;
 	}
 }
