@@ -150,6 +150,18 @@ public class InheritanceGraph {
 	 * @param child
 	 * 		A child type.
 	 * @param parents
+	 * 		Collection of parents of the child.
+	 */
+	public void add(String child, Collection<String> parents) {
+		add(child, new HashSet<>(parents));
+	}
+
+	/**
+	 * Add a child and its parents to the inheritance graph.
+	 *
+	 * @param child
+	 * 		A child type.
+	 * @param parents
 	 * 		Set of parents of the child.
 	 */
 	public void add(String child, Set<String> parents) {

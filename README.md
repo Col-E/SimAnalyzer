@@ -85,6 +85,24 @@ analyzer.setSkipDeadCodeBlocks(true / false);
 analyzer.setThrowUnresolvedAnalyzerErrors(true / false);
 ```
 
+To easily create a `TypeChecker` implementation you can use the built-in hierarchy graph tool `InheritanceGraph`
+```java
+// Setup the graph
+InheritanceGraph graph = new InheritanceGraph();
+graph.addClasspath(); // add all files loaded in the classpath
+graph.addClass(new File("example.class")); // add single class
+graph.addClass(Files.readAllBytes(Paths.get("example.class"))); // add bytecode
+graph.addArchive(new File("example.jar")); // add jar or jmod (java module)
+graph.addDirectory(new File("directory/with/classes-or-jars")); // add directory (recursive)
+graph.add("child", Arrays.asList("parent1", "parent2")); // manually specify child/parent relations
+// Use the graph
+@Override
+protected TypeChecker createTypeChecker() {
+	return (parent, child) -> graph.getAllParents(child.getInternalName())
+			.contains(parent.getInternalName());
+}
+```
+
 ### Exceptions
 
 There are two primary exception types. There is the default ASM `AnalyzerException` and SimAnalyzer's `ResolableAnalyzerException`.
