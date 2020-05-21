@@ -15,6 +15,7 @@ The analyzer is highly configurable so that it can be customized to your persona
     * By default dead code is skipped entirely, resulting in `null` values for frames at the indices of instructions within dead code blocks.
 * Track instructions that contribute to values
     * Values track the instructions that directly contribute to their value
+* Track basic control flow blocks
 
 ## Usage
 
