@@ -7,7 +7,6 @@ import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.util.InsnUtil;
 import me.coley.analysis.util.TypeUtil;
 import me.coley.analysis.value.AbstractValue;
-import me.coley.analysis.value.NullConstantValue;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
@@ -64,14 +63,17 @@ public class ResolvableExceptionFactory {
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the argument value is no longer null when stack-frames are filled out
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-					AbstractValue methodContext = FrameUtil.getTopStack(frame);
-					return TypeUtil.isSubTypeOfOrNull(typeChecker, methodContext, expectedType);
+					AbstractValue valueContext = FrameUtil.getTopStack(frame);
+					return TypeUtil.isSubTypeOfOrNull(typeChecker, valueContext, expectedType);
 				}, insn, "Expected type: " + expectedType);
 			case GETFIELD:
 				return new ResolvableAnalyzerException((methodNode, frames) -> {
 					// Validate that the top of the stack matches the expected type
 					Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
 					AbstractValue fieldContext = FrameUtil.getTopStack(frame);
+					// Check against safe null
+					if (fieldContext.isNull() && FlowUtil.isNullChecked(blockHandler, fieldContext, insn))
+						return true;
 					return TypeUtil.isSubTypeOf(typeChecker, fieldContext.getType(), expectedType);
 				}, insn, "Expected type: " + expectedType);
 			case RETURN:
@@ -119,7 +121,7 @@ public class ResolvableExceptionFactory {
 			AbstractValue methodContext =
 					frame.getStack(frame.getStackSize() - (args.length + 1));
 			// Check against safe null
-			if (methodContext instanceof NullConstantValue && FlowUtil.isNullChecked(blockHandler, methodContext, insn))
+			if (methodContext.isNull() && FlowUtil.isNullChecked(blockHandler, methodContext, insn))
 				return true;
 			// Check types
 			return TypeUtil.isSubTypeOf(typeChecker, methodContext.getType(), owner);
@@ -160,8 +162,8 @@ public class ResolvableExceptionFactory {
 		return new ResolvableAnalyzerException((methodNode, frames) -> {
 			// Validate that the argument value is no longer null when stack-frames are filled out
 			Frame<AbstractValue> frame = frames[InsnUtil.index(insn)];
-			AbstractValue methodContext = frame.getStack(frame.getStackSize() - (args.length - argIndex + 1));
-			return TypeUtil.isSubTypeOfOrNull(typeChecker, methodContext, expectedType);
+			AbstractValue argValue = frame.getStack(frame.getStackSize() - (args.length - argIndex + 1));
+			return TypeUtil.isSubTypeOfOrNull(typeChecker, argValue, expectedType);
 		},insn, "Argument type was \"" + actualType + "\" but expected \"" + expectedType + "\"");
 	}
 
