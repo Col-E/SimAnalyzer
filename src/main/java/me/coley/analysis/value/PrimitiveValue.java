@@ -100,7 +100,7 @@ public class PrimitiveValue extends AbstractValue {
 	 * @return char value.
 	 */
 	public static AbstractValue ofChar(AbstractInsnNode insn, char value) {
-		return new PrimitiveValue(insn, Type.INT_TYPE, value);
+		return new PrimitiveValue(insn, Type.INT_TYPE, (int) value);
 	}
 
 	/**
@@ -112,7 +112,7 @@ public class PrimitiveValue extends AbstractValue {
 	 * @return char value.
 	 */
 	public static AbstractValue ofChar(List<AbstractInsnNode> insns, char value) {
-		return new PrimitiveValue(insns, Type.INT_TYPE, value);
+		return new PrimitiveValue(insns, Type.INT_TYPE, (int) value);
 	}
 
 	/**
