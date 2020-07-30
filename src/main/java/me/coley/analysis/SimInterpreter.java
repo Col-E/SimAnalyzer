@@ -9,9 +9,11 @@ import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.NullConstantValue;
 import me.coley.analysis.value.PrimitiveValue;
 import me.coley.analysis.value.ReturnAddressValue;
-import me.coley.analysis.value.SimulatedVirtualValue;
+import me.coley.analysis.value.simulated.AnyValue;
+import me.coley.analysis.value.simulated.AbstractSimulatedValue;
 import me.coley.analysis.value.UninitializedValue;
 import me.coley.analysis.value.VirtualValue;
+import me.coley.analysis.value.simulated.StringValue;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -220,8 +222,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	private AbstractValue newValueOrVirtualized(AbstractInsnNode insn, Type type) {
-		if (SimulatedVirtualValue.supported(type))
-			return SimulatedVirtualValue.initialize(Collections.singletonList(insn), typeChecker, type);
+		if (AbstractSimulatedValue.supported(type))
+			return AbstractSimulatedValue.initialize(Collections.singletonList(insn), typeChecker, type);
 		return newValue(insn, type);
 	}
 
@@ -319,7 +321,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				} else if (value instanceof Double) {
 					return PrimitiveValue.ofDouble(insn, (double) value);
 				} else if (value instanceof String) {
-					return SimulatedVirtualValue.ofString(insn, typeChecker, (String) value);
+					return StringValue.of(insn, typeChecker, (String) value);
 				} else if (value instanceof Type) {
 					Type type =  (Type) value;
 					int sort = type.getSort();
@@ -391,6 +393,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				insnType = value.getType();
 				break;
 			default:
+				// DUP, DUP_X1, DUP_X2, DUP2, DUP2_X1, DUP2_X2, SWAP
 				break;
 		}
 		// Very simple type verification, don't try to mix primitives and non-primitives
@@ -405,6 +408,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// relate to the type of the instruction.
 		if(load && insnType != value.getType())
 			return newValue(combine(value.getInsns(), insn), insnType);
+		// Types match or type is null (so either a store operation)
 		return value.copy(insn);
 	}
 
@@ -895,7 +899,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			// Attempt to create simulated value
 			MethodInsnNode min = (MethodInsnNode) insn;
 			try {
-				AbstractValue value = SimulatedVirtualValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
+				AbstractValue value = AnyValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
 				if (value != null)
 					return value;
 			} catch(SimFailedException ex) {
@@ -910,10 +914,12 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// INVOKEVIRTUAL, INVOKESPECIAL, INVOKEINTERFACE
 		MethodInsnNode min = (MethodInsnNode) insn;
 		AbstractValue ownerValue = values.get(0);
-		if(ownerValue == UninitializedValue.UNINITIALIZED_VALUE)
+		if (ownerValue == UninitializedValue.UNINITIALIZED_VALUE) {
+			// Instruction acting on an uninitialized variable/value
 			throw new AnalyzerException(insn, "Cannot call method on uninitialized reference");
-		else if (ownerValue instanceof NullConstantValue && !isMethodAddSuppressed(min) &&
+		} else if (ownerValue instanceof NullConstantValue && !isMethodAddSuppressed(min) &&
 				!FlowUtil.isNullChecked(getBlockHandler(), ownerValue, insn)) {
+			// Instruction acting on a null value, which is illegal
 			markBad(insn, exceptionFactory.unexpectedNullReference(
 					min, ownerValue, values, TypeMismatchKind.INVOKE_HOST_NULL));
 			return newValue(insn, Type.getMethodType(min.desc).getReturnType());
@@ -922,13 +928,14 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return null;
 		} else {
 			// Get return value
-			if (ownerValue instanceof SimulatedVirtualValue) {
-				SimulatedVirtualValue simObject = (SimulatedVirtualValue) ownerValue;
+			if (ownerValue instanceof AbstractSimulatedValue) {
+				AbstractSimulatedValue<?> simObject = (AbstractSimulatedValue<?>) ownerValue;
 				List<? extends AbstractValue> arguments = values.subList(1, values.size());
 				try {
 					return simObject.ofVirtualInvoke(min, arguments);
 				} catch(SimFailedException ex) {
 					// Do nothing for simulation failing, this is expected in MOST cases.
+					// This will fallback on VirtualValue behavior
 				}
 			}
 			if (ownerValue instanceof VirtualValue) {

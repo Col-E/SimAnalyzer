@@ -1,11 +1,11 @@
 package me.coley.analysis.exception;
 
-import me.coley.analysis.value.SimulatedVirtualValue;
+import me.coley.analysis.value.simulated.AbstractSimulatedValue;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
 /**
- * Exception for indicating a method could not be invoked by {@link SimulatedVirtualValue}.
+ * Exception for indicating a method could not be invoked by {@link AbstractSimulatedValue}.
  *
  * @author Matt
  */

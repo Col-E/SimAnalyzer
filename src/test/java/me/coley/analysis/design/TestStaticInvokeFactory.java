@@ -4,15 +4,10 @@ import me.coley.analysis.SimAnalyzer;
 import me.coley.analysis.SimInterpreter;
 import me.coley.analysis.StaticInvokeFactory;
 import me.coley.analysis.TestUtils;
-import me.coley.analysis.TypeChecker;
-import me.coley.analysis.exception.ResolvableAnalyzerException;
-import me.coley.analysis.exception.ResolvableExceptionFactory;
-import me.coley.analysis.exception.TypeMismatchKind;
 import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.value.AbstractValue;
-import me.coley.analysis.value.SimulatedVirtualValue;
+import me.coley.analysis.value.simulated.StringValue;
 import org.junit.jupiter.api.Test;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -61,7 +56,7 @@ public class TestStaticInvokeFactory extends TestUtils {
 		public AbstractValue invokeStatic(MethodInsnNode insn, List<?
 				extends AbstractValue> arguments) {
 			if (insn.name.equals("getHello")) {
-				return SimulatedVirtualValue.ofString((List<AbstractInsnNode>) null, null, "Hello World");
+				return StringValue.of((List<AbstractInsnNode>) null, null, "Hello World");
 			}
 			return super.invokeStatic(insn, arguments);
 		}
