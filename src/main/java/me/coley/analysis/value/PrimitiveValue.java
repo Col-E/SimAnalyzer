@@ -1,6 +1,7 @@
 package me.coley.analysis.value;
 
 import me.coley.analysis.Unresolved;
+import me.coley.analysis.util.CollectUtils;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -304,7 +305,7 @@ public class PrimitiveValue extends AbstractValue {
 	 */
 	public PrimitiveValue add(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, addN((Number) value, (Number) other.value));
@@ -320,7 +321,7 @@ public class PrimitiveValue extends AbstractValue {
 	 */
 	public PrimitiveValue sub(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, subN((Number) value, (Number) other.value));
@@ -336,7 +337,7 @@ public class PrimitiveValue extends AbstractValue {
 	 */
 	public PrimitiveValue mul(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, mulN((Number) value, (Number) other.value));
@@ -352,7 +353,7 @@ public class PrimitiveValue extends AbstractValue {
 	 */
 	public PrimitiveValue div(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		try {
@@ -372,7 +373,7 @@ public class PrimitiveValue extends AbstractValue {
 	 */
 	public PrimitiveValue rem(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		try {
@@ -392,7 +393,7 @@ public class PrimitiveValue extends AbstractValue {
 	 */
 	public PrimitiveValue shl(AbstractInsnNode opInsn, AbstractValue other) {
 		Type common = commonMathType(type, other.type);
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
 		if (isValueUnresolved() || other.isValueUnresolved())
@@ -412,7 +413,7 @@ public class PrimitiveValue extends AbstractValue {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, shrN((Number) value, (Number) other.value));
@@ -430,7 +431,7 @@ public class PrimitiveValue extends AbstractValue {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, ushrN((Number) value, (Number) other.value));
@@ -448,7 +449,7 @@ public class PrimitiveValue extends AbstractValue {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, andN((Number) value, (Number) other.value));
@@ -466,7 +467,7 @@ public class PrimitiveValue extends AbstractValue {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (value == null || other.value == null)
 			return new PrimitiveValue(mergedInsns, common);
 		if (value instanceof Unresolved || other.value instanceof Unresolved)
@@ -486,7 +487,7 @@ public class PrimitiveValue extends AbstractValue {
 		Type common = commonMathType(type, other.type);
 		if (!(common.equals(Type.INT_TYPE) || common.equals(Type.LONG_TYPE)))
 			throw new IllegalStateException("Requires int/long types");
-		List<AbstractInsnNode> mergedInsns = combine(insns, other.insns, opInsn);
+		List<AbstractInsnNode> mergedInsns = combineAdd(insns, other.insns, opInsn);
 		if (isValueUnresolved() || other.isValueUnresolved())
 			return new PrimitiveValue(mergedInsns, common);
 		return new PrimitiveValue(mergedInsns, common, xorN((Number) value, (Number) other.value));
@@ -494,7 +495,7 @@ public class PrimitiveValue extends AbstractValue {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return new PrimitiveValue(combine(getInsns(), insn), getType(), getValue());
+		return new PrimitiveValue(CollectUtils.add(getInsns(), insn), getType(), getValue());
 	}
 
 	@Override

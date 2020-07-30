@@ -19,7 +19,7 @@ public class CollectUtils {
 	 *
 	 * @return New list with additional item.
 	 */
-	public static <T> List<T> combine(List<T> src, T additional) {
+	public static <T> List<T> add(List<T> src, T additional) {
 		List<T> list = new ArrayList<>(src);
 		list.add(additional);
 		return list;
@@ -53,8 +53,8 @@ public class CollectUtils {
 	 *
 	 * @return New list with additional items.
 	 */
-	public static <T> List<T> combine(List<T> src1, List<T> src2, T additional) {
-		return combine(combine(src1, src2), additional);
+	public static <T> List<T> combineAdd(List<T> src1, List<T> src2, T additional) {
+		return add(combine(src1, src2), additional);
 	}
 
 	/**

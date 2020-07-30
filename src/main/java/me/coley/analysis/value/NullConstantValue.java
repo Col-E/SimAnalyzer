@@ -6,7 +6,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.combine;
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value wrapper for null constants.
@@ -34,7 +34,7 @@ public class NullConstantValue extends AbstractValue {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return onCopy(new NullConstantValue(combine(getInsns(), insn)));
+		return onCopy(new NullConstantValue(add(getInsns(), insn)));
 	}
 
 	@Override

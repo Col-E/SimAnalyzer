@@ -46,6 +46,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	private ResolvableExceptionFactory exceptionFactory;
 	private StaticInvokeFactory staticInvokeFactory;
 	private StaticGetFactory staticGetFactory;
+	private ParameterFactory parameterFactory;
 	private BlockHandler blockHandler;
 	private TypeChecker typeChecker;
 	private SimAnalyzer analyzer;
@@ -117,6 +118,21 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	 */
 	public void setStaticGetFactory(StaticGetFactory staticGetFactory) {
 		this.staticGetFactory = staticGetFactory;
+	}
+
+	/**
+	 * @returnFactory to generate values for parameters in the initial frame.
+	 */
+	public ParameterFactory getParameterFactory() {
+		return parameterFactory;
+	}
+
+	/**
+	 * @param parameterFactory
+	 * 		Factory to generate values for parameters in the initial frame.
+	 */
+	public void setParameterFactory(ParameterFactory parameterFactory) {
+		this.parameterFactory = parameterFactory;
 	}
 
 	/**
@@ -265,6 +281,13 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public AbstractValue newParameterValue(boolean isInstanceMethod, int local, Type type) {
+		// Supply parameter value if factory instantiated.
+		if (parameterFactory != null) {
+			AbstractValue value = parameterFactory.createParameterValue(isInstanceMethod, local, type);
+			if (value != null)
+				return value;
+		}
+		// Fallback, assume dummy type value
 		return newValue((List<AbstractInsnNode>) null, type);
 	}
 
@@ -407,7 +430,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// If we're operating on a load-instruction we want the return value to
 		// relate to the type of the instruction.
 		if(load && insnType != value.getType())
-			return newValue(combine(value.getInsns(), insn), insnType);
+			return newValue(add(value.getInsns(), insn), insnType);
 		// Types match or type is null (so either a store operation)
 		return value.copy(insn);
 	}
@@ -417,10 +440,10 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		switch(insn.getOpcode()) {
 			case INEG:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.INT_TYPE);
-				return PrimitiveValue.ofInt(combine(value.getInsns(), insn), -toInt(value));
+					return newValue(add(value.getInsns(), insn), Type.INT_TYPE);
+				return PrimitiveValue.ofInt(add(value.getInsns(), insn), -toInt(value));
 			case IINC:
-				return PrimitiveValue.ofInt(combine(value.getInsns(), insn), ((IincInsnNode) insn).incr);
+				return PrimitiveValue.ofInt(add(value.getInsns(), insn), ((IincInsnNode) insn).incr);
 			case L2I:
 			case F2I:
 			case D2I:
@@ -428,38 +451,38 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case I2C:
 			case I2S:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.INT_TYPE);
-				return PrimitiveValue.ofInt(combine(value.getInsns(), insn), toInt(value));
+					return newValue(add(value.getInsns(), insn), Type.INT_TYPE);
+				return PrimitiveValue.ofInt(add(value.getInsns(), insn), toInt(value));
 			case FNEG:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.FLOAT_TYPE);
-				return PrimitiveValue.ofFloat(combine(value.getInsns(), insn), -toFloat(value));
+					return newValue(add(value.getInsns(), insn), Type.FLOAT_TYPE);
+				return PrimitiveValue.ofFloat(add(value.getInsns(), insn), -toFloat(value));
 			case I2F:
 			case L2F:
 			case D2F:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.FLOAT_TYPE);
-				return PrimitiveValue.ofFloat(combine(value.getInsns(), insn), toFloat(value));
+					return newValue(add(value.getInsns(), insn), Type.FLOAT_TYPE);
+				return PrimitiveValue.ofFloat(add(value.getInsns(), insn), toFloat(value));
 			case LNEG:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.LONG_TYPE);
-				return PrimitiveValue.ofLong(combine(value.getInsns(), insn), -toLong(value));
+					return newValue(add(value.getInsns(), insn), Type.LONG_TYPE);
+				return PrimitiveValue.ofLong(add(value.getInsns(), insn), -toLong(value));
 			case I2L:
 			case F2L:
 			case D2L:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.LONG_TYPE);
-				return PrimitiveValue.ofLong(combine(value.getInsns(), insn), toLong(value));
+					return newValue(add(value.getInsns(), insn), Type.LONG_TYPE);
+				return PrimitiveValue.ofLong(add(value.getInsns(), insn), toLong(value));
 			case DNEG:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.DOUBLE_TYPE);
-				return PrimitiveValue.ofDouble(combine(value.getInsns(), insn), -toDouble(value));
+					return newValue(add(value.getInsns(), insn), Type.DOUBLE_TYPE);
+				return PrimitiveValue.ofDouble(add(value.getInsns(), insn), -toDouble(value));
 			case I2D:
 			case L2D:
 			case F2D:
 				if (isValueUnknown(value))
-					return newValue(combine(value.getInsns(), insn), Type.DOUBLE_TYPE);
-				return PrimitiveValue.ofDouble(combine(value.getInsns(), insn), toDouble(value));
+					return newValue(add(value.getInsns(), insn), Type.DOUBLE_TYPE);
+				return PrimitiveValue.ofDouble(add(value.getInsns(), insn), toDouble(value));
 			case IFEQ:
 			case IFNE:
 			case IFLT:
@@ -511,36 +534,36 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 					markBad(insn, exceptionFactory.unexpectedType(Type.getObjectType(fin.owner),
 							value.getType(), insn, value, TypeMismatchKind.GETFIELD));
 				Type type = Type.getType(fin.desc);
-				return newValue(combine(value.getInsns(), insn), type);
+				return newValue(add(value.getInsns(), insn), type);
 			}
 			case NEWARRAY:
 				switch(((IntInsnNode) insn).operand) {
 					case T_BOOLEAN:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[Z"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[Z"));
 					case T_CHAR:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[C"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[C"));
 					case T_BYTE:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[B"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[B"));
 					case T_SHORT:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[S"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[S"));
 					case T_INT:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[I"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[I"));
 					case T_FLOAT:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[F"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[F"));
 					case T_DOUBLE:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[D"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[D"));
 					case T_LONG:
-						return newValue(combine(value.getInsns(), insn), Type.getType("[J"));
+						return newValue(add(value.getInsns(), insn), Type.getType("[J"));
 					default:
 						break;
 				}
 				throw new AnalyzerException(insn, "Invalid array type specified in instruction");
 			case ANEWARRAY:
-				return newValue(combine(value.getInsns(), insn), Type.getType("[" + Type.getObjectType(((TypeInsnNode) insn).desc)));
+				return newValue(add(value.getInsns(), insn), Type.getType("[" + Type.getObjectType(((TypeInsnNode) insn).desc)));
 			case ARRAYLENGTH:
 				if (value.getValue() instanceof Unresolved && !((Unresolved) value.getValue()).isArray())
 					markBad(insn, new AnalyzerException(insn, "Expected an array type."));
-				return newValue(combine(value.getInsns(), insn), Type.INT_TYPE);
+				return newValue(add(value.getInsns(), insn), Type.INT_TYPE);
 			case ATHROW:
 				if (!value.isReference())
 					throw new AnalyzerException(insn, "Expected reference type on stack for ATHROW.");
@@ -548,9 +571,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case CHECKCAST:
 				if (!value.isReference())
 					throw new AnalyzerException(insn, "Expected reference type on stack for CHECKCAST.");
-				return newValue(combine(value.getInsns(), insn), Type.getObjectType(((TypeInsnNode) insn).desc));
+				return newValue(add(value.getInsns(), insn), Type.getObjectType(((TypeInsnNode) insn).desc));
 			case INSTANCEOF:
-				return newValue(combine(value.getInsns(), insn), Type.INT_TYPE);
+				return newValue(add(value.getInsns(), insn), Type.INT_TYPE);
 			case MONITORENTER:
 			case MONITOREXIT:
 				if (!value.isReference())
@@ -700,22 +723,22 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// Update values for non-primitives
 		switch(insn.getOpcode()) {
 			case FALOAD:
-				return newValue(combine(value1.getInsns(), value2.getInsns(), insn), Type.FLOAT_TYPE);
+				return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.FLOAT_TYPE);
 			case LALOAD:
-				return newValue(combine(value1.getInsns(), value2.getInsns(), insn), Type.LONG_TYPE);
+				return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.LONG_TYPE);
 			case DALOAD:
-				return newValue(combine(value1.getInsns(), value2.getInsns(), insn), Type.DOUBLE_TYPE);
+				return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.DOUBLE_TYPE);
 			case AALOAD:
 				if (value1.getType() == null)
-					return newValue(combine(value1.getInsns(), value2.getInsns(), insn), OBJECT_TYPE);
+					return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), OBJECT_TYPE);
 				else
-					return newValue(combine(value1.getInsns(), value2.getInsns(), insn),
+					return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn),
 							Type.getType(value1.getType().getDescriptor().substring(1)));
 			case IALOAD:
 			case BALOAD:
 			case CALOAD:
 			case SALOAD:
-				return newValue(combine(value1.getInsns(), value2.getInsns(), insn), Type.INT_TYPE);
+				return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.INT_TYPE);
 			case IF_ICMPEQ:
 			case IF_ICMPNE:
 			case IF_ICMPLT:
@@ -783,15 +806,15 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case DCMPG:
 				if (p1.getValue() == null || p2.getValue() == null ||
 						isValueUnknown(p1) || isValueUnknown(p2))
-					return newValue(combine(value1.getInsns(), value2.getInsns(), insn), Type.INT_TYPE);
+					return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.INT_TYPE);
 				double v1 = ((Number) value1.getValue()).doubleValue();
 				double v2 = ((Number) value1.getValue()).doubleValue();
 				if(v1 > v2)
-					return PrimitiveValue.ofInt(combine(value1.getInsns(), value2.getInsns(), insn), 1);
+					return PrimitiveValue.ofInt(combineAdd(value1.getInsns(), value2.getInsns(), insn), 1);
 				else if(v1 < v2)
-					return PrimitiveValue.ofInt(combine(value1.getInsns(), value2.getInsns(), insn), -1);
+					return PrimitiveValue.ofInt(combineAdd(value1.getInsns(), value2.getInsns(), insn), -1);
 				else
-					return PrimitiveValue.ofInt(combine(value1.getInsns(), value2.getInsns(), insn), 0);
+					return PrimitiveValue.ofInt(combineAdd(value1.getInsns(), value2.getInsns(), insn), 0);
 			default:
 				break;
 		}
@@ -861,7 +884,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				if (!Type.INT_TYPE.equals(value.getType()))
 					throw new AnalyzerException(insn, "MULTIANEWARRAY argument was not numeric!",
 							newValue(insn, Type.INT_TYPE), value);
-			return newValue(combine(values.stream()
+			return newValue(add(values.stream()
 						.flatMap(value -> value.getInsns().stream())
 						.collect(Collectors.toList()), insn),
 					Type.getType(((MultiANewArrayInsnNode) insn).desc));
@@ -907,7 +930,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			}
 			// Fallback to virtual value
 			Type retType = Type.getReturnType(((MethodInsnNode) insn).desc);
-			return newValue(combine(values.stream()
+			return newValue(add(values.stream()
 						.flatMap(value -> value.getInsns().stream())
 						.collect(Collectors.toList()), insn), retType);
 		}

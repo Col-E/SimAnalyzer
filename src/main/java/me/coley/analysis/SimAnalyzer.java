@@ -44,6 +44,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		this.interpreter.setExceptionFactory(createExceptionFactory());
 		this.interpreter.setStaticInvokeFactory(createStaticInvokeFactory());
 		this.interpreter.setStaticGetFactory(createStaticGetFactory());
+		this.interpreter.setParameterFactory(createParameterFactory());
 		this.interpreter.setTypeChecker(createTypeChecker());
 	}
 
@@ -123,6 +124,15 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 * @return Getter factory for interpreter to use.
 	 */
 	protected StaticGetFactory createStaticGetFactory() {
+		return null;
+	}
+
+	/**
+	 * Provides {@code null} by default.
+	 *
+	 * @return Parameter value factory for interpreter to use.
+	 */
+	protected ParameterFactory createParameterFactory() {
 		return null;
 	}
 

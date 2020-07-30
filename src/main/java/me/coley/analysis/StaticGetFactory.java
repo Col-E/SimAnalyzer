@@ -9,14 +9,12 @@ import org.objectweb.asm.tree.FieldInsnNode;
  *
  * @author Matt
  */
-public class StaticGetFactory {
+public interface StaticGetFactory {
 	/**
 	 * @param insn
 	 * 		Field instruction.
 	 *
 	 * @return Value of {@link Opcodes#GETSTATIC}. {@link Unresolved} for unknown values.
 	 */
-	public AbstractValue getStatic(FieldInsnNode insn) {
-		return null;
-	}
+	AbstractValue getStatic(FieldInsnNode insn);
 }

@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @author Matt
  */
-public class StaticInvokeFactory {
+public interface StaticInvokeFactory {
 	/**
 	 * @param insn
 	 * 		Method instruction.
@@ -19,7 +19,5 @@ public class StaticInvokeFactory {
 	 *
 	 * @return Value of invoke. {@code null} for void types.
 	 */
-	public AbstractValue invokeStatic(MethodInsnNode insn, List<? extends AbstractValue> arguments) {
-		return null;
-	}
+	AbstractValue invokeStatic(MethodInsnNode insn, List<? extends AbstractValue> arguments);
 }

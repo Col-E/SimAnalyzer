@@ -54,7 +54,9 @@ public class TestInstructionTracking extends TestUtils {
 		// GOTO B
 		// D:
 		// RETURN
-		List<AbstractInsnNode> insns = FrameUtil.getTopStack(frames[index]).getInsns();
+		AbstractValue value = FrameUtil.getTopStack(frames[index]);
+		List<AbstractInsnNode> insns = value.getInsns();
 		assertEquals(12, insns.size());
+		assertEquals("Hello World", value.getValue());
 	}
 }

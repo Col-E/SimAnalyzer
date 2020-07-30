@@ -12,6 +12,7 @@ public class TestJavacClasses extends TestUtils {
 	@ParameterizedTest
 	@ValueSource(strings =  {
 			"bin/javac/HelloWorld.class",
+			"bin/javac/ExplodeStr.class",
 			"bin/javac/PrimitiveCasting.class",
 			"bin/javac/PrimitiveMath.class",
 			"bin/javac/FindNArray.class",

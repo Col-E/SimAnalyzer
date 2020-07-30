@@ -11,7 +11,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.combine;
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value recording the type and value<i>(using reflection and other means to track the existing value)</i>.
@@ -31,7 +31,7 @@ public class AnyValue extends AbstractSimulatedValue<Object> {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return new AnyValue(combine(getInsns(), insn), getType(), getValue(), resultValue, typeChecker);
+		return new AnyValue(add(getInsns(), insn), getType(), getValue(), resultValue, typeChecker);
 	}
 
 	/**

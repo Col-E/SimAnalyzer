@@ -2,6 +2,7 @@ package me.coley.analysis.value.simulated;
 
 import me.coley.analysis.TypeChecker;
 import me.coley.analysis.exception.SimFailedException;
+import me.coley.analysis.util.CollectUtils;
 import me.coley.analysis.util.GetSet;
 import me.coley.analysis.value.AbstractValue;
 import org.objectweb.asm.Type;
@@ -11,7 +12,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import java.util.Collections;
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.combine;
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value recording the current string value.
@@ -57,7 +58,7 @@ public class StringValue extends AbstractSimulatedValue<String> {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return new StringValue(combine(getInsns(), insn), getType(), (String) getValue(), resultValue, typeChecker);
+		return new StringValue(add(getInsns(), insn), getType(), (String) getValue(), resultValue, typeChecker);
 	}
 
 	@Override

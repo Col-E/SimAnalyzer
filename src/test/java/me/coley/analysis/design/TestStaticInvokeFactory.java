@@ -51,14 +51,14 @@ public class TestStaticInvokeFactory extends TestUtils {
 		assertEquals("Hello World", value.getValue());
 	}
 
-	static class StaticInvokeFactoryTestImpl extends StaticInvokeFactory {
+	static class StaticInvokeFactoryTestImpl implements StaticInvokeFactory {
 		@Override
 		public AbstractValue invokeStatic(MethodInsnNode insn, List<?
 				extends AbstractValue> arguments) {
 			if (insn.name.equals("getHello")) {
 				return StringValue.of((List<AbstractInsnNode>) null, null, "Hello World");
 			}
-			return super.invokeStatic(insn, arguments);
+			return null;
 		}
 	}
 }

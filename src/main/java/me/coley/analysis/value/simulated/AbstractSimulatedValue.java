@@ -18,8 +18,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import static me.coley.analysis.util.CollectUtils.combine;
-import static me.coley.analysis.util.CollectUtils.distinct;
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Base logic of simulated value types.
@@ -51,7 +50,6 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		"java/lang/Double",
 		"java/lang/Math"
 	));
-	protected static final Type VOID_METHOD_TYPE = Type.getMethodType("()V");
 
 	/**
 	 * Where the {@link #value} is the value at the instruction,
@@ -77,10 +75,28 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		return value != null;
 	}
 
+
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
 		// We override this to enforce children of this class to implement it properly using the correct type
 		throw new UnsupportedOperationException("Please implement this in any impl class");
+	}
+
+	/**
+	 * @return Result value of the series of connected simulation frames.
+	 */
+	public T getResultValue() {
+		return resultValue.get();
+	}
+
+	/**
+	 * Externally update the result value.
+	 *
+	 * @param value
+	 * 		New result value.
+	 */
+	public void updateResultValue(T value) {
+		resultValue.set(value);
 	}
 
 	/**
@@ -118,8 +134,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 			throw new SimFailedException(min, "Cannot act on a primitive");
 		// Nullify voids
 		Type desc = Type.getMethodType(min.desc);
-		if (desc.equals(VOID_METHOD_TYPE))
-			return null;
+		//  if (desc.getReturnType().equals(Type.VOID_TYPE))
+		//  	return null;
 		// Validate method context and arguments
 		if (value == null)
 			throw new SimFailedException(min, "Context is null");
@@ -162,7 +178,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 				for (int i = 0; i < argTypes.length; i++)
 					argsMatch &= argTypes[i].equals(Type.getType(c.getParameterTypes()[i]));
 				if (argsMatch) {
-					List<AbstractInsnNode> insns = distinct(combine(arguments.stream()
+					List<AbstractInsnNode> insns = distinct(combineAdd(arguments.stream()
 							.flatMap(arg -> arg.getInsns().stream())
 							.collect(Collectors.toList()), getInsns(), min));
 					Object[] argValues = arguments.stream()
@@ -177,7 +193,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		// Check against blacklist. They are do-nothing methods that we want to skip.
 		for (String[] def : BLACKLISTED_METHODS)
 			if (def[0].equals(name) && def[1].equals(desc.getDescriptor()))
-				return this;
+				return new AnyValue(insns,
+						getType(), getValue(), typeChecker);
 		// Check against normal methods
 		Type retType = desc.getReturnType();
 		for (Method mm : invokeHost.getClass().getMethods()) {
@@ -202,7 +219,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 					return null;
 				// Handle return value.
 				if (retVal != null) {
-					List<AbstractInsnNode> insns = distinct(combine(arguments.stream()
+					List<AbstractInsnNode> insns = distinct(combineAdd(arguments.stream()
 							.flatMap(arg -> arg.getInsns().stream())
 							.collect(Collectors.toList()), getInsns(), min));
 					if (TypeUtil.isPrimitiveDesc(retType.getDescriptor())) {
@@ -264,7 +281,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 					return null;
 				// Handle return value.
 				if (retVal != null) {
-					List<AbstractInsnNode> insns = distinct(combine(arguments.stream()
+					List<AbstractInsnNode> insns = distinct(add(arguments.stream()
 							.flatMap(arg -> arg.getInsns().stream())
 							.collect(Collectors.toList()), min));
 					if (TypeUtil.isPrimitiveDesc(retType.getDescriptor())) {

@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.combine;
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value wrapper recording the type. Wrapped value is a placeholder and used to denote an unresolved value.
@@ -84,7 +84,7 @@ public class VirtualValue extends AbstractValue {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return onCopy(new VirtualValue(combine(getInsns(), insn), getType(), getValue(), typeChecker));
+		return onCopy(new VirtualValue(add(getInsns(), insn), getType(), getValue(), typeChecker));
 	}
 
 	@Override

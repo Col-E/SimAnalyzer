@@ -5,7 +5,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.combine;
+import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value wrapper for return addresses.
@@ -33,7 +33,7 @@ public class ReturnAddressValue extends AbstractValue {
 
 	@Override
 	public AbstractValue copy(AbstractInsnNode insn) {
-		return onCopy(new ReturnAddressValue(combine(getInsns(), insn)));
+		return onCopy(new ReturnAddressValue(add(getInsns(), insn)));
 	}
 
 	@Override
