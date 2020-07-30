@@ -26,7 +26,7 @@ Please include as much information as possible.
 This can include:
 
  * Clear and descriptive title
- * Log files
+ * Stacktrace
  * Steps to reproduce the bug 
  * An explanation of what you _\*expected\*_ to happen
  * The file being analyzed _(Do not share anything you do not own the rights to)_ 
