@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// TODO: Inbound / outbound
+// TODO: Inbound / outbound connections between blocks
+//  - For jump instructions
+//  - Edge case for "possible exception"
 
 /**
  * Basic block of a control flow graph.
@@ -79,6 +81,29 @@ public class Block implements Comparable<Block> {
 	}
 
 	/**
+	 * @return Block adjacent to this one.
+	 */
+	public Block getPriorAdjacent() {
+		return getAdjacent(-1);
+	}
+
+	/**
+	 * @return Block adjacent to this one.
+	 */
+	public Block getNextAdjacent() {
+		return getAdjacent(1);
+	}
+
+	private Block getAdjacent(int offset) {
+		if (parent == null)
+			return null;
+		int thisIndex = parent.getSubBlocks().indexOf(this);
+		if (thisIndex == 0 || thisIndex == parent.getSubBlocks().size() - 1)
+			return null;
+		return parent.getSubBlocks().get(thisIndex + offset);
+	}
+
+	/**
 	 * @return All instructions in the block.
 	 */
 	public List<AbstractInsnNode> getInsns() {
@@ -125,16 +150,19 @@ public class Block implements Comparable<Block> {
 			return;
 		}
 		// Check if block should contain an existing block
+		List<Block> contained = new ArrayList<>();
 		for (Block sub : getSubBlocks()) {
 			// Assert the sub's "from" index resides within the new block
 			if (sub.getFrom() >= block.getFrom() && sub.getFrom() <= block.getTo()) {
-				found = sub;
+				contained.add(sub);
 			}
 		}
-		if (found != null) {
-			// New block should engulf the existing sub-block
-			subBlocks.remove(found);
-			block.addSubBlock(found);
+		for (Block containedSub : contained) {
+			if (containedSub != null) {
+				// New block should engulf the existing sub-block
+				subBlocks.remove(containedSub);
+				block.addSubBlock(containedSub);
+			}
 		}
 		// Add block to current block
 		block.setParent(this);
