@@ -121,4 +121,4 @@ If any other exception type is thrown, please open a bug report with the full st
 ## Recommended Reading
 
 * **[ASM-Analysis JavaDoc](https://www.javadoc.io/doc/org.ow2.asm/asm-analysis/latest/index.html)** - ASM analysis javadocs.
-* **[Using ASM-Analysis to remove dead code](https://coley.software/using-asm-analysis-to-remove-dead-code/)** - An example use case for SimAnalyzer to remove dead code.
+* **[Using ASM-Analysis to remove dead code](http://archive.is/Ciz85)** - An example use case for SimAnalyzer to remove dead code.
