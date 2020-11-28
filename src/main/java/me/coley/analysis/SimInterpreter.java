@@ -121,7 +121,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	/**
-	 * @returnFactory to generate values for parameters in the initial frame.
+	 * @return Factory to generate values for parameters in the initial frame.
 	 */
 	public ParameterFactory getParameterFactory() {
 		return parameterFactory;

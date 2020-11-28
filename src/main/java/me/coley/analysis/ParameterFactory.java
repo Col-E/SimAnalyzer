@@ -1,9 +1,7 @@
 package me.coley.analysis;
 
 import me.coley.analysis.value.AbstractValue;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.FieldInsnNode;
 
 /**
  * Factory for generating {@link AbstractValue} for method parameter values.

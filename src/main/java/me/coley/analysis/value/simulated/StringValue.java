@@ -2,7 +2,6 @@ package me.coley.analysis.value.simulated;
 
 import me.coley.analysis.TypeChecker;
 import me.coley.analysis.exception.SimFailedException;
-import me.coley.analysis.util.CollectUtils;
 import me.coley.analysis.util.GetSet;
 import me.coley.analysis.value.AbstractValue;
 import org.objectweb.asm.Type;
