@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestCustomLegalClasses extends TestUtils {
 	@ParameterizedTest
 	@ValueSource(strings =  {
+			"bin/custom/misc/ReusedVarIndex.class",
 			"bin/custom/misc/JumpOverBadThrow.class",
 			"bin/custom/misc/JumpOverUnusedCode.class",
 			"bin/custom/misc/HelloWorldGotoOrdering.class",

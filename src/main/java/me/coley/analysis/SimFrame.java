@@ -2,6 +2,7 @@ package me.coley.analysis;
 
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.UninitializedValue;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.Interpreter;
@@ -51,6 +52,11 @@ public class SimFrame extends Frame<AbstractValue> {
 		}
 		// Update local
 		super.setLocal(index, value);
+	}
+
+	@Override
+	public void initJumpTarget(int opcode, LabelNode target) {
+		reservedSlots.clear();
 	}
 
 	@Override
