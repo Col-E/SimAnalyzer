@@ -79,6 +79,12 @@ SimAnalzer analyzer = new SimAnalyzer(new SimInterpreter()) {
         // Allow better type checking, default uses system classpath
         return super.createTypeChecker();
     }
+
+     @Override
+    protected ParameterFactory createParameterFactory() {
+        // Allow the interpreter to be fed literal values for the parameters of the analyzed method
+        return super.createParameterFactory();
+    }
 };
 // Determine if we want to skip dead-code blocks
 analyzer.setSkipDeadCodeBlocks(true / false);

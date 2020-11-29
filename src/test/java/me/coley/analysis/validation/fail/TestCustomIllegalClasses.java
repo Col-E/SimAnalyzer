@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestCustomIllegalClasses extends TestUtils {
 	@ParameterizedTest
 	@ValueSource(strings =  {
+			"bin/custom/illegal/vars/DoubleStoreAsInt.class",
 			"bin/custom/illegal/vars/IntToObject.class",
 			"bin/custom/illegal/vars/LongToInt.class",
 			"bin/custom/illegal/vars/StringToInt.class"

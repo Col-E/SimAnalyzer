@@ -419,9 +419,15 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				// DUP, DUP_X1, DUP_X2, DUP2, DUP2_X1, DUP2_X2, SWAP
 				break;
 		}
-		// Very simple type verification, don't try to mix primitives and non-primitives
+		// Very simple type verification
 		Type argType = value.getType();
 		if(insnType != null && argType != null) {
+			// Check if we are trying to store a wider value into a narrower type
+			if (!load && insnType.getSort() < argType.getSort()) {
+				throw new AnalyzerException(insn, "Cannot store wider type (" + argType.getDescriptor() +
+						") into narrower type: " + insnType.getDescriptor());
+			}
+			// Don't try to mix primitives and non-primitives
 			if(insnType.getSort() == Type.OBJECT && isPrimitive(argType))
 				throw new AnalyzerException(insn, "Cannot mix primitive value with type-variable instruction");
 			else if(argType.getSort() == Type.OBJECT && isPrimitive(insnType))
