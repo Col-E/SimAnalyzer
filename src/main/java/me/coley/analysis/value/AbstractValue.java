@@ -215,7 +215,7 @@ public abstract class AbstractValue implements Value {
 		else if (this instanceof ReturnAddressValue)
 			return "<JSR_RET>";
 		else if (isNull())
-			return "<NULL:" + type + ">";
+			return "<" + type + ":NULL>";
 		else
 			return "<" + type + ":" + value + ">";
 	}
