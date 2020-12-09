@@ -6,6 +6,7 @@ import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.exception.TypeMismatchKind;
 import me.coley.analysis.util.FlowUtil;
 import me.coley.analysis.value.AbstractValue;
+import me.coley.analysis.value.ExceptionValue;
 import me.coley.analysis.value.NullConstantValue;
 import me.coley.analysis.value.PrimitiveValue;
 import me.coley.analysis.value.ReturnAddressValue;
@@ -294,7 +295,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	@Override
 	public AbstractValue newExceptionValue(TryCatchBlockNode tryCatch,
 										   Frame<AbstractValue> handlerFrame, Type exceptionType) {
-		return newValue(tryCatch.handler, exceptionType);
+		return ExceptionValue.ofHandledException(tryCatch.handler, typeChecker, exceptionType);
 	}
 
 	@Override
@@ -1007,6 +1008,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return newValue(merged, value1.getType());
 		else if (value2.canMerge(value1))
 			return newValue(merged, value2.getType());
+		// Check if exception values
+		if (value1 instanceof ExceptionValue && value2 instanceof ExceptionValue)
+			return ExceptionValue.ofHandledException(merged.get(0), typeChecker, Type.getObjectType("java/lang/Exception"));
 		return UninitializedValue.UNINITIALIZED_VALUE;
 	}
 
