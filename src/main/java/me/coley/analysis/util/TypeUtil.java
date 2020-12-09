@@ -17,9 +17,13 @@ import java.util.List;
 public class TypeUtil {
 	private static final List<Integer> SORT_ORDER = new ArrayList<>();
 	/**
-	 * Cosntant for object type.
+	 * Constant for object type.
 	 */
 	public static final Type OBJECT_TYPE = Type.getObjectType("java/lang/Object");
+	/**
+	 * Constant for exception type.
+	 */
+	public static final Type EXCEPTION_TYPE = Type.getObjectType("java/lang/Exception");
 
 	/**
 	 * @param desc

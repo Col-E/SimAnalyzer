@@ -50,6 +50,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	private ParameterFactory parameterFactory;
 	private BlockHandler blockHandler;
 	private TypeChecker typeChecker;
+	private TypeResolver typeResolver;
 	private SimAnalyzer analyzer;
 
 	/**
@@ -164,6 +165,21 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	 */
 	public void setTypeChecker(TypeChecker typeChecker) {
 		this.typeChecker = typeChecker;
+	}
+
+	/**
+	 * @return Type resolver for common type analysis.
+	 */
+	public TypeResolver getTypeResolver() {
+		return typeResolver;
+	}
+
+	/**
+	 * @param typeResolver
+	 * 		Type resolver for common type analysis.
+	 */
+	public void setTypeResolver(TypeResolver typeResolver) {
+		this.typeResolver = typeResolver;
 	}
 
 	/**
@@ -1010,7 +1026,12 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return newValue(merged, value2.getType());
 		// Check if exception values
 		if (value1 instanceof ExceptionValue && value2 instanceof ExceptionValue)
-			return ExceptionValue.ofHandledException(merged.get(0), typeChecker, Type.getObjectType("java/lang/Exception"));
+			return ExceptionValue.ofHandledException(merged.get(0), typeChecker,
+					typeResolver.commonException(value1.getType(), value2.getType()));
+		// Check if virtual values
+		else if (value1 instanceof VirtualValue && value2 instanceof VirtualValue)
+			return newValue(merged, typeResolver.common(value1.getType(), value2.getType()));
+		// Unhandled case is likely unmerge-able
 		return UninitializedValue.UNINITIALIZED_VALUE;
 	}
 

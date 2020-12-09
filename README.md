@@ -79,6 +79,12 @@ SimAnalzer analyzer = new SimAnalyzer(new SimInterpreter()) {
         // Allow better type checking, default uses system classpath
         return super.createTypeChecker();
     }
+    
+    @Override
+    protected TypeResolver createTypeResolver() {
+        // Allow common type resolution, defaults to only merging exactly equal types
+        return super.createTypeChecker();
+    }
 
      @Override
     protected ParameterFactory createParameterFactory() {
@@ -110,6 +116,31 @@ protected TypeChecker createTypeChecker() {
 }
 ```
 
+The same can be done for a `TypeResolver`:
+```java
+// Using the same "graph" object from above
+@Override
+protected TypeResolver createTypeResolver() {
+    return new TypeResolver() {
+        @Override
+        public Type common(Type type1, Type type2) {
+            String common = graph.getCommon(type1.getInternalName(), type2.getInternalName());
+            if (common != null)
+                return Type.getObjectType(common);
+            return TypeUtil.OBJECT_TYPE;
+        }
+
+        @Override
+        public Type commonException(Type type1, Type type2) {
+            String common = graph.getCommon(type1.getInternalName(), type2.getInternalName());
+            if (common != null)
+                return Type.getObjectType(common);
+            return TypeUtil.EXCEPTION_TYPE;
+        }
+    };
+}
+```
+
 ### Exceptions
 
 There are two primary exception types. There is the default ASM `AnalyzerException` and SimAnalyzer's `ResolableAnalyzerException`.
@@ -118,10 +149,10 @@ There are two primary exception types. There is the default ASM `AnalyzerExcepti
 
 **ResolableAnalyzerException**: Logged interally when problems occurred in analysis and checked after analysis finishes to determine if the problem has been resolved. 
 A problem can be resolved when ASM's analyzer revisits some frames and their values due to the nature of its control flow handling. 
- 
+
  * If a problem is unresolved, frames will still have been generated.
  * Unresolved errors will be thrown unless `analyzer.setThrowUnresolvedAnalyzerErrors(false);` is set.
- 
+
 If any other exception type is thrown, please open a bug report with the full stacktrace.
 
 ## Recommended Reading

@@ -233,6 +233,42 @@ public class InheritanceGraph {
 	}
 
 	/**
+	 * @param first
+	 * 		First class name.
+	 * @param second
+	 * 		Second class name.
+	 *
+	 * @return Common parent of the classes.
+	 */
+	public String getCommon(String first, String second) {
+		// Full upwards hierarchy for the first
+		Set<String> firstParents = getAllParents(first);
+		firstParents.add(first);
+		// Base case
+		if (firstParents.contains(second))
+			return second;
+		// Iterate over second's parents via breadth-first-search
+		Queue<String> queue = new LinkedList<>();
+		queue.add(second);
+		do {
+			// Item to fetch parents of
+			String next = queue.poll();
+			if (next == null || next.equals("java/lang/Object"))
+				break;
+			for (String parent : getParents(next)) {
+				// Parent in the set of visited classes? Then its valid.
+				if(firstParents.contains(parent))
+					return parent;
+				// Queue up the parent
+				if (!parent.equals("java/lang/Object"))
+					queue.add(parent);
+			}
+		} while(!queue.isEmpty());
+		// Fallback option
+		return "java/lang/Object";
+	}
+
+	/**
 	 * @return String to write to file for caching purposes.
 	 */
 	public String convertToString() {

@@ -5,7 +5,9 @@ import me.coley.analysis.exception.ResolvableAnalyzerException;
 import me.coley.analysis.exception.ResolvableExceptionFactory;
 import me.coley.analysis.util.FlowUtil;
 import me.coley.analysis.util.InternalAnalyzerHackery;
+import me.coley.analysis.util.TypeUtil;
 import me.coley.analysis.value.AbstractValue;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -45,6 +47,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		this.interpreter.setStaticInvokeFactory(createStaticInvokeFactory());
 		this.interpreter.setStaticGetFactory(createStaticGetFactory());
 		this.interpreter.setParameterFactory(createParameterFactory());
+		this.interpreter.setTypeResolver(createTypeResolver());
 		this.interpreter.setTypeChecker(createTypeChecker());
 	}
 
@@ -134,6 +137,25 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 */
 	protected ParameterFactory createParameterFactory() {
 		return null;
+	}
+
+	/**
+	 * Provides a basic equality check by default.
+	 *
+	 * @return Type resolver for interpreter to use.
+	 */
+	protected TypeResolver createTypeResolver() {
+		return new TypeResolver() {
+			@Override
+			public Type common(Type type1, Type type2) {
+				return type1.equals(type2) ? type1 : TypeUtil.OBJECT_TYPE;
+			}
+
+			@Override
+			public Type commonException(Type type1, Type type2) {
+				return type1.equals(type2) ? type1 : TypeUtil.EXCEPTION_TYPE;
+			}
+		};
 	}
 
 	/**
