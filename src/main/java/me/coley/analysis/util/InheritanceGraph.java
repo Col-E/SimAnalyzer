@@ -1,13 +1,18 @@
 package me.coley.analysis.util;
 
-import java.io.*;
+import org.objectweb.asm.ClassReader;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.stream.*;
-import java.util.zip.*;
-
-import org.objectweb.asm.ClassReader;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 
 /**
@@ -107,7 +112,7 @@ public class InheritanceGraph {
 				if (e.getName().endsWith(".class")) {
 					InputStream is = jarArchive.getInputStream(e);
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					while((nRead = is.read(data, 0, data.length)) != -1)
+					while ((nRead = is.read(data, 0, data.length)) != -1)
 						baos.write(data, 0, nRead);
 					baos.flush();
 					addClass(baos.toByteArray());
@@ -176,6 +181,28 @@ public class InheritanceGraph {
 	 * @param name
 	 * 		Internal name of class.
 	 *
+	 * @return {@code true} when there is a recognized lookup for parents for the given class.
+	 * {@code false} when the graph is not aware of any types by the given name.
+	 */
+	public boolean hasParentLookup(String name) {
+		return parentsOf.containsKey(name);
+	}
+
+	/**
+	 * @param name
+	 * 		Internal name of class.
+	 *
+	 * @return {@code true} when there is a recognized lookup for children for the given class.
+	 * {@code false} when the graph is not aware of any types by the given name.
+	 */
+	public boolean hasChildrenLookup(String name) {
+		return childrenOf.containsKey(name);
+	}
+
+	/**
+	 * @param name
+	 * 		Internal name of class.
+	 *
 	 * @return Direct parents of the class.
 	 */
 	public Set<String> getParents(String name) {
@@ -195,7 +222,7 @@ public class InheritanceGraph {
 		Set<String> set = parentsOfCachedAll.get(name);
 		if (set == null)
 			parentsOfCachedAll.put(name, set =
-                    (getParents(name).stream()
+					(getParents(name).stream()
 							.map(n -> getAllParents(n).stream())
 							.reduce(getParents(name).stream(), Stream::concat))
 							.collect(Collectors.toSet()));
@@ -225,7 +252,7 @@ public class InheritanceGraph {
 		Set<String> set = childrenOfCachedAll.get(name);
 		if (set == null)
 			childrenOfCachedAll.put(name, set =
-                    (getChildren(name).stream()
+					(getChildren(name).stream()
 							.map(n -> getAllChildren(n).stream())
 							.reduce(getChildren(name).stream(), Stream::concat))
 							.collect(Collectors.toSet()));
@@ -257,13 +284,13 @@ public class InheritanceGraph {
 				break;
 			for (String parent : getParents(next)) {
 				// Parent in the set of visited classes? Then its valid.
-				if(firstParents.contains(parent))
+				if (firstParents.contains(parent))
 					return parent;
 				// Queue up the parent
 				if (!parent.equals("java/lang/Object"))
 					queue.add(parent);
 			}
-		} while(!queue.isEmpty());
+		} while (!queue.isEmpty());
 		// Fallback option
 		return "java/lang/Object";
 	}
