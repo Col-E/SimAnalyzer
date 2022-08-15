@@ -103,6 +103,7 @@ To easily create a `TypeChecker` implementation you can use the built-in hierarc
 // Setup the graph
 InheritanceGraph graph = new InheritanceGraph();
 graph.addClasspath(); // add all files loaded in the classpath
+graph.addModulePath(); // add all files on the module path (Java 9+)
 graph.addClass(new File("example.class")); // add single class
 graph.addClass(Files.readAllBytes(Paths.get("example.class"))); // add bytecode
 graph.addArchive(new File("example.jar")); // add jar or jmod (java module)

@@ -77,7 +77,7 @@ public class InheritanceGraph {
 	/**
 	 * Add classes from the current module path to the inheritance graph.
 	 * <br>
-	 * Intended to be used in a Java 11 environment.
+	 * Intended to be used in a Java 9+ environment.
 	 *
 	 * @return {@code true} when successfully run.
 	 * {@code false} implies the module path could not be read, probably because you are on JDK 8.

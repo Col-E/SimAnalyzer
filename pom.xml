@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.coley</groupId>
 	<artifactId>analysis</artifactId>
-	<version>1.6.0</version>
+	<version>1.7.0</version>
 	<name>Sim Analyzer</name>
 	<description>An ASM analyzer that performs minimal simulations</description>
 	<!--
@@ -10,7 +10,7 @@
 	-->
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<asm.version>9.0</asm.version>
+		<asm.version>9.3</asm.version>
 		<junit.version>5.6.2</junit.version>
 	</properties>
 	<!-- Dependencies, not jdk version specific -->
