@@ -18,7 +18,8 @@ public class TestJavacClasses extends TestUtils {
 			"bin/javac/FindNArray.class",
 			"bin/javac/SetItToNull.class",
 			"bin/javac/ZipIO.class",
-			"bin/javac/Type.class"
+			"bin/javac/Type.class",
+			"bin/javac/StringEquals.class"
 	})
 	public void testClasses(String classPath) {
 		ClassNode node = getFromName(classPath);
