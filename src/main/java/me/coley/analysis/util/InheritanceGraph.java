@@ -6,6 +6,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -18,15 +20,15 @@ import java.util.zip.ZipFile;
 /**
  * Simple class inheritance graph.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class InheritanceGraph {
 	private static final String MAP_KV_SPLIT = ":::";
 	private static final String MAP_VAL_SPLIT = ",";
-	private SetMap<String, String> parentsOf = new SetMap<>();
-	private SetMap<String, String> childrenOf = new SetMap<>();
-	private SetMap<String, String> parentsOfCachedAll = new SetMap<>();
-	private SetMap<String, String> childrenOfCachedAll = new SetMap<>();
+	private final SetMap<String, String> parentsOf = new SetMap<>();
+	private final SetMap<String, String> childrenOf = new SetMap<>();
+	private final SetMap<String, String> parentsOfCachedAll = new SetMap<>();
+	private final SetMap<String, String> childrenOfCachedAll = new SetMap<>();
 
 	/**
 	 * @return Copied instance.
@@ -66,8 +68,61 @@ public class InheritanceGraph {
 					addDirectory(file);
 				else if (file.getName().endsWith(".jar") || file.getName().endsWith(".jmod"))
 					addArchive(file);
+				else if (file.getName().endsWith(".jmod") || file.getName().endsWith(".jmod"))
+					addArchive(file);
 			}
 		}
+	}
+
+	/**
+	 * Add classes from the current module path to the inheritance graph.
+	 * <br>
+	 * Intended to be used in a Java 11 environment.
+	 *
+	 * @return {@code true} when successfully run.
+	 * {@code false} implies the module path could not be read, probably because you are on JDK 8.
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean addModulePath() {
+		try {
+			// Set<ModuleReference> refs = ModuleFinder.ofSystem().findAll()
+			Class<?> c_finder = Class.forName("java.lang.module.ModuleFinder");
+			Method finder_ofSystem = c_finder.getDeclaredMethod("ofSystem");
+			Method finder_findAll = c_finder.getDeclaredMethod("findAll");
+			Object result = finder_ofSystem.invoke(null);
+			Set<?> refs = (Set<?>) finder_findAll.invoke(result);
+			// For loop contents
+			Class<?> c_ref = Class.forName("java.lang.module.ModuleReference");
+			Class<?> c_reader = Class.forName("java.lang.module.ModuleReader");
+			Method ref_open = c_ref.getDeclaredMethod("open");
+			Method reader_list = c_reader.getDeclaredMethod("list");
+			Method reader_read = c_reader.getDeclaredMethod("read", String.class);
+			Method reader_close = c_reader.getDeclaredMethod("release", ByteBuffer.class);
+			for (Object ref : refs) {
+				// ModuleReader reader = ref.open();
+				// reader.list().filter(name -> name.endsWith(".class"))
+				Object reader = ref_open.invoke(ref);
+				Stream<String> stream = (Stream<String>) reader_list.invoke(reader);
+				stream.filter(name -> name.endsWith(".class")).forEach(name -> {
+					try {
+						// Optional<ByteBuffer> read = reader.read(name);
+						Optional<ByteBuffer> read = (Optional<ByteBuffer>) reader_read.invoke(reader, name);
+						if (read.isPresent()) {
+							ByteBuffer buffer = read.get();
+							byte[] bytecode = new byte[buffer.remaining()];
+							buffer.slice().get(bytecode);
+							reader_close.invoke(reader, buffer);
+							addClass(bytecode);
+						}
+					} catch (Exception ignored) {
+						// no-op
+					}
+				});
+			}
+		} catch (Exception ignored) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -80,9 +135,22 @@ public class InheritanceGraph {
 	 * 		When walking the directory fails
 	 */
 	public void addDirectory(File dir) throws IOException {
-		if (!dir.exists())
+		addDirectory(dir.toPath());
+	}
+
+	/**
+	 * Add classes from the given directory to the inheritance graph.
+	 *
+	 * @param dir
+	 * 		Directory to use.
+	 *
+	 * @throws IOException
+	 * 		When walking the directory fails
+	 */
+	public void addDirectory(Path dir) throws IOException {
+		if (!Files.isDirectory(dir))
 			return;
-		Files.walkFileTree(Paths.get(dir.getAbsolutePath()), new SimpleFileVisitor<Path>() {
+		Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
 			@Override
 			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 				if (file.toString().endsWith(".class"))
