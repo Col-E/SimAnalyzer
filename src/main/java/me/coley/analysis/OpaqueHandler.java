@@ -8,7 +8,8 @@ import org.objectweb.asm.tree.LabelNode;
 import java.util.HashMap;
 import java.util.Map;
 
-import static me.coley.analysis.OpaquePredicateType.*;
+import static me.coley.analysis.OpaquePredicateType.FALL_THROUGH;
+import static me.coley.analysis.OpaquePredicateType.GOTO_DESTINATION;
 
 /**
  * Opaque predicate manager.
@@ -30,6 +31,16 @@ public class OpaqueHandler {
 	 */
 	public OpaqueHandler(InternalAnalyzerHackery hackery) {
 		this.hackery = hackery;
+	}
+
+	/**
+	 * Reset state.
+	 */
+	public void reset() {
+		hasHitOpaquePredicate = false;
+		doesOpaqueJumpGotoDestination = false;
+		opaqueJumpMap.clear();
+		destination = null;
 	}
 
 	/**

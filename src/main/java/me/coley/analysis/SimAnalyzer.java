@@ -26,7 +26,6 @@ import java.util.Map;
 public class SimAnalyzer extends Analyzer<AbstractValue> {
 	private final InternalAnalyzerHackery hackery = new InternalAnalyzerHackery(this);
 	private final OpaqueHandler opaqueHandler = new OpaqueHandler(hackery);
-	private final BlockHandler blockHandler = new BlockHandler();
 	private final SimInterpreter interpreter;
 	private boolean throwUnresolvedAnalyzerErrors = true;
 	private boolean skipDeadCodeBlocks = true;
@@ -42,7 +41,6 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		super(interpreter);
 		this.interpreter = interpreter;
 		this.interpreter.setAnalyzer(this);
-		this.interpreter.setBlockHandler(getBlockHandler());
 		this.interpreter.setExceptionFactory(createExceptionFactory());
 		this.interpreter.setStaticInvokeFactory(createStaticInvokeFactory());
 		this.interpreter.setStaticGetFactory(createStaticGetFactory());
@@ -51,16 +49,29 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		this.interpreter.setTypeChecker(createTypeChecker());
 	}
 
+	/**
+	 * Called to reset state values between calls to {@link #analyze(String, MethodNode)}.
+	 *
+	 * @param owner
+	 * 		New method owner.
+	 * @param method
+	 * 		New method to analyze.
+	 */
+	private void reset(String owner, MethodNode method) {
+		this.method = method;
+		opaqueHandler.reset();
+		interpreter.reset(owner, method);
+	}
+
 	@Override
 	public Frame<AbstractValue>[] analyze(String owner, MethodNode method) throws AnalyzerException {
-		this.method = method;
-		blockHandler.setMethod(method);
+		reset(owner, method);
 		Frame<AbstractValue>[] values = super.analyze(owner, method);
 		// If the interpreter has problems, check if they've been resolved by checking frames
 		if (interpreter.hasReportedProblems()) {
 			// Check if the error logged no longer applies given the stack analysis results
 			// (due to flow control most likely)
-			for(Map.Entry<AbstractInsnNode, AnalyzerException> e :
+			for (Map.Entry<AbstractInsnNode, AnalyzerException> e :
 					new HashSet<>(interpreter.getProblemInsns().entrySet())) {
 				if (e.getValue() instanceof ResolvableAnalyzerException) {
 					if (((ResolvableAnalyzerException) e.getValue()).validate(method, values)) {
@@ -87,7 +98,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 
 	@Override
 	protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
-		blockHandler.add(insnIndex, successorIndex);
+		interpreter.getBlockHandler().add(insnIndex, successorIndex);
 		return true;
 	}
 
@@ -95,7 +106,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	protected void newControlFlowEdge(int insnIndex, int successorIndex) {
 		// Create block when necessary
 		if (FlowUtil.isFlowModifier(method, insnIndex, successorIndex)) {
-			blockHandler.add(insnIndex, successorIndex);
+			interpreter.getBlockHandler().add(insnIndex, successorIndex);
 		}
 		// Modify internal ASM logic to bypass dead code regions
 		if (skipDeadCodeBlocks) {
@@ -174,7 +185,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 				Class<?> clsChild = Class.forName(child.getClassName(), false,
 						ClassLoader.getSystemClassLoader());
 				return clsParent.isAssignableFrom(clsChild);
-			} catch(Throwable t) {
+			} catch (Throwable t) {
 				return false;
 			}
 		};
@@ -235,6 +246,6 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 * @return Block manager.
 	 */
 	public BlockHandler getBlockHandler() {
-		return blockHandler;
+		return interpreter.getBlockHandler();
 	}
 }

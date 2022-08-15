@@ -5,26 +5,16 @@ import me.coley.analysis.exception.ResolvableExceptionFactory;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.exception.TypeMismatchKind;
 import me.coley.analysis.util.FlowUtil;
-import me.coley.analysis.value.AbstractValue;
-import me.coley.analysis.value.ExceptionValue;
-import me.coley.analysis.value.NullConstantValue;
-import me.coley.analysis.value.PrimitiveValue;
-import me.coley.analysis.value.ReturnAddressValue;
-import me.coley.analysis.value.simulated.AnyValue;
+import me.coley.analysis.value.*;
 import me.coley.analysis.value.simulated.AbstractSimulatedValue;
-import me.coley.analysis.value.UninitializedValue;
-import me.coley.analysis.value.VirtualValue;
+import me.coley.analysis.value.simulated.AnyValue;
 import me.coley.analysis.value.simulated.StringValue;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.BasicValue;
-import org.objectweb.asm.tree.analysis.BasicVerifier;
-import org.objectweb.asm.tree.analysis.Frame;
-import org.objectweb.asm.tree.analysis.Interpreter;
+import org.objectweb.asm.tree.analysis.*;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.objectweb.asm.Opcodes.*;
-import static me.coley.analysis.util.TypeUtil.*;
 import static me.coley.analysis.util.CollectUtils.*;
+import static me.coley.analysis.util.TypeUtil.*;
+import static org.objectweb.asm.Opcodes.*;
 
 /**
  * A modified version of ASM's {@link BasicVerifier} to use {@link AbstractValue}.<br>
@@ -44,11 +34,11 @@ import static me.coley.analysis.util.CollectUtils.*;
  */
 public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();
+	private final BlockHandler blockHandler = new BlockHandler();
 	private ResolvableExceptionFactory exceptionFactory;
 	private StaticInvokeFactory staticInvokeFactory;
 	private StaticGetFactory staticGetFactory;
 	private ParameterFactory parameterFactory;
-	private BlockHandler blockHandler;
 	private TypeChecker typeChecker;
 	private TypeResolver typeResolver;
 	private SimAnalyzer analyzer;
@@ -61,6 +51,19 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	// TODO: Make all of these LoggedAnalyzerException where applicable
+
+	/**
+	 * Called to reset state values between usages.
+	 *
+	 * @param owner
+	 * 		New method owner.
+	 * @param method
+	 * 		New method to analyze.
+	 */
+	public void reset(String owner, MethodNode method) {
+		badTypeInsns.clear();
+		blockHandler.setMethod(method);
+	}
 
 	/**
 	 * @return Map of instructions to their thrown analyzer errors.
@@ -135,14 +138,6 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	 */
 	public void setParameterFactory(ParameterFactory parameterFactory) {
 		this.parameterFactory = parameterFactory;
-	}
-
-	/**
-	 * @param blockHandler
-	 * 		Block handler to determine scope.
-	 */
-	public void setBlockHandler(BlockHandler blockHandler) {
-		this.blockHandler = blockHandler;
 	}
 
 	/**
