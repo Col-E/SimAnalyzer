@@ -25,7 +25,7 @@ steps:
       - ./mvnw package -Dmaven.test.skip -Dcheckstyle.skip -B
 
   - name: release
-    image: node:13
+    image: node:14
     commands:
       - chmod +x mvnw
       - npx semantic-release
