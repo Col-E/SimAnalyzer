@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Utilities for ASM's {@link Type} class <i>(And some additional descriptor cases)</i>
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class TypeUtil {
 	private static final List<Integer> SORT_ORDER = new ArrayList<>();

@@ -5,7 +5,7 @@ import org.objectweb.asm.Type;
 /**
  * Used to assist the analyzer to figure out what common types should be.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public interface TypeResolver {
 	/**

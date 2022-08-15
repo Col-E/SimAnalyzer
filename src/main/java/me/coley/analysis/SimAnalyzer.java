@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * Analyzer that uses {@link SimFrame} and is based on {@link AbstractValue}s.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class SimAnalyzer extends Analyzer<AbstractValue> {
 	private final InternalAnalyzerHackery hackery = new InternalAnalyzerHackery(this);

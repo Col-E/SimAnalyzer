@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Basic block of a control flow graph.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class Block implements Comparable<Block> {
 	private final int key;

@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 /**
  * Value wrapper recording exceptions.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class ExceptionValue extends VirtualValue {
 	protected ExceptionValue(AbstractInsnNode insn, Type type, Object value, TypeChecker typeChecker) {

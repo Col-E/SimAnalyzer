@@ -7,7 +7,7 @@ import java.lang.reflect.Field;
 /**
  * Instruction level utilities.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class InsnUtil {
 	private static Field INSN_INDEX;

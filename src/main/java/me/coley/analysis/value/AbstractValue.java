@@ -15,7 +15,7 @@ import java.util.Objects;
 /**
  * Value wrapper recording the type and value.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public abstract class AbstractValue implements Value {
 	protected final Type type;

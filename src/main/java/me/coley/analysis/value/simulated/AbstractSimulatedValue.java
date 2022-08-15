@@ -26,7 +26,7 @@ import static me.coley.analysis.util.CollectUtils.*;
  * @param <T>
  * 		Type of value simulated.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	private static final Map<String, BiFunction<List<AbstractInsnNode>, TypeChecker, AbstractSimulatedValue<?>>>

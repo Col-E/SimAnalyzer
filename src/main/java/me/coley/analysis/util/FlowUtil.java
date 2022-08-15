@@ -11,7 +11,7 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 /**
  * Utilities for flow control.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class FlowUtil {
 	/**

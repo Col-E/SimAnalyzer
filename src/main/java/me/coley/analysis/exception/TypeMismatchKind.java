@@ -3,7 +3,7 @@ package me.coley.analysis.exception;
 /**
  * Situation where type mismatch occurred.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public enum TypeMismatchKind {
 	GETFIELD,

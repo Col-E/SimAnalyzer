@@ -13,7 +13,7 @@ import static me.coley.analysis.OpaquePredicateType.*;
 /**
  * Opaque predicate manager.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class OpaqueHandler {
 	private final Map<AbstractInsnNode, OpaquePredicateType> opaqueJumpMap = new HashMap<>();

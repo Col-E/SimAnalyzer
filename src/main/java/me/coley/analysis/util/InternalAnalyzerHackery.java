@@ -12,7 +12,7 @@ import java.lang.reflect.Field;
  * <br>
  * If you're reading this and know an alternative <b>PLEASE</b> open a PR.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class InternalAnalyzerHackery {
 	private final Analyzer<?> analyzer;

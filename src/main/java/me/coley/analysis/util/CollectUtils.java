@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Collection utilities.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class CollectUtils {
 	/**

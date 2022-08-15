@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Factory for generating {@link AbstractValue} from static method calls.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public interface StaticInvokeFactory {
 	/**

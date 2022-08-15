@@ -21,7 +21,7 @@ import static org.objectweb.asm.Opcodes.INVOKEDYNAMIC;
 /**
  * Factory for generating {@link ResolvableAnalyzerException}.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class ResolvableExceptionFactory {
 	private final TypeChecker typeChecker;

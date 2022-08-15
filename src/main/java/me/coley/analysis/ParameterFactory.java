@@ -7,7 +7,7 @@ import org.objectweb.asm.Type;
  * Factory for generating {@link AbstractValue} for method parameter values.
  * These values populate the initial frame of the analysis process.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public interface ParameterFactory {
 	/**

@@ -5,7 +5,7 @@ import org.objectweb.asm.tree.MethodNode;
 /**
  * Manager of basic control-flow blocks.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class BlockHandler {
 	private Block root;

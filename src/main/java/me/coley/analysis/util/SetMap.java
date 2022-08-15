@@ -10,7 +10,7 @@ import java.util.*;
  * @param <V>
  * 		Value type.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class SetMap<K, V> extends HashMap<K, Set<V>> {
 	/**

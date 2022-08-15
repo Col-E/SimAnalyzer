@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
 /**
  * Factory for generating {@link AbstractValue} from static field references.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public interface StaticGetFactory {
 	/**

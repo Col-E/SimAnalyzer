@@ -16,7 +16,7 @@ import static me.coley.analysis.util.CollectUtils.*;
 /**
  * Value recording the current string value.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class StringValue extends AbstractSimulatedValue<String> {
 	protected StringValue(List<AbstractInsnNode> insns, Type type, String value, TypeChecker typeChecker) {

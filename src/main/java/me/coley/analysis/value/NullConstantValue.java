@@ -11,7 +11,7 @@ import static me.coley.analysis.util.CollectUtils.*;
 /**
  * Value wrapper for null constants.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class NullConstantValue extends AbstractValue {
 	public static Type NULL_VALUE_TYPE = TypeUtil.OBJECT_TYPE;

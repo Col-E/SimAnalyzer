@@ -6,7 +6,7 @@ import org.objectweb.asm.tree.analysis.Frame;
 /**
  * Frame utilities.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class FrameUtil {
 

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Value wrapper for uninitialized values.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class UninitializedValue extends AbstractValue {
 	public static final AbstractValue UNINITIALIZED_VALUE = new UninitializedValue(null, null);

@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * Placeholder value for an unresolved value of some type.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class Unresolved {
 	private final Type type;

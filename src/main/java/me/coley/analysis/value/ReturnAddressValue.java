@@ -10,7 +10,7 @@ import static me.coley.analysis.util.CollectUtils.*;
 /**
  * Value wrapper for return addresses.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class ReturnAddressValue extends AbstractValue {
 	private ReturnAddressValue(AbstractInsnNode insn) {

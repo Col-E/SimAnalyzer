@@ -16,7 +16,7 @@ import static me.coley.analysis.util.CollectUtils.*;
 /**
  * Value recording the type and value<i>(using reflection and other means to track the existing value)</i>.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class AnyValue extends AbstractSimulatedValue<Object> {
 

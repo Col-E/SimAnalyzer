@@ -13,7 +13,7 @@ import org.objectweb.asm.tree.analysis.Value;
  * Instead a {@link #validator} is run after analysis is done that checks if the cause of the
  * analysis error has been resolved.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class ResolvableAnalyzerException extends AnalyzerException {
 	private final Validator validator;

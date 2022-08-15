@@ -6,7 +6,7 @@ package me.coley.analysis.util;
  * @param <T>
  * 		Value type.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class GetSet<T> {
 	private T value;

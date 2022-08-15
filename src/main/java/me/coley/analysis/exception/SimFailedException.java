@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.analysis.AnalyzerException;
 /**
  * Exception for indicating a method could not be invoked by {@link AbstractSimulatedValue}.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class SimFailedException extends AnalyzerException {
 	/**

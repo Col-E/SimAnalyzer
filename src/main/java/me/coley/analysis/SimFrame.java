@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Frame for {@link AbstractValue} content.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class SimFrame extends Frame<AbstractValue> {
 	private final Set<Integer> reservedSlots = new HashSet<>();

@@ -40,7 +40,7 @@ import static me.coley.analysis.util.CollectUtils.*;
  * A modified version of ASM's {@link BasicVerifier} to use {@link AbstractValue}.<br>
  * Additionally, a few extra verification steps are taken and simple math and types are calculated.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class SimInterpreter extends Interpreter<AbstractValue> {
 	private final Map<AbstractInsnNode, AnalyzerException> badTypeInsns = new HashMap<>();

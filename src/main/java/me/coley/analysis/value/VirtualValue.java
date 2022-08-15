@@ -12,7 +12,7 @@ import static me.coley.analysis.util.CollectUtils.*;
 /**
  * Value wrapper recording the type. Wrapped value is a placeholder and used to denote an unresolved value.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class VirtualValue extends AbstractValue {
 	protected final TypeChecker typeChecker;

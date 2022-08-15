@@ -13,7 +13,7 @@ import static me.coley.analysis.util.CollectUtils.*;
 /**
  * Value wrapper for primitives.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public class PrimitiveValue extends AbstractValue {
 	/**

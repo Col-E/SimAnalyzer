@@ -9,6 +9,6 @@ import java.util.function.BiPredicate;
 /**
  * Validator for {@link ResolvableAnalyzerException}.
  *
- * @author Matt
+ * @author Matt Coley
  */
 public interface Validator extends BiPredicate<MethodNode, Frame<AbstractValue>[]> {}
