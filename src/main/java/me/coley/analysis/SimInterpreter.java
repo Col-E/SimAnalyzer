@@ -184,7 +184,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		return !badTypeInsns.isEmpty();
 	}
 
-	private void handleOpqaues(AbstractInsnNode insn, AbstractValue value) {
+	private void handleOpaques(AbstractInsnNode insn, AbstractValue value) {
 		if (value.isPrimitive() && value.isValueResolved()) {
 			int p1 = ((PrimitiveValue) value).getIntValue();
 			boolean gotoDestination = false;
@@ -214,7 +214,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		}
 	}
 
-	private void handleOpqaues(AbstractInsnNode insn, AbstractValue value1, AbstractValue value2) {
+	private void handleOpaques(AbstractInsnNode insn, AbstractValue value1, AbstractValue value2) {
 		if (value1.isPrimitive() && value1.isValueResolved() && value2.isPrimitive() && value2.isValueResolved()) {
 			int p1 = ((PrimitiveValue) value1).getIntValue();
 			int p2 = ((PrimitiveValue) value2).getIntValue();
@@ -507,7 +507,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case IFGE:
 			case IFGT:
 			case IFLE:
-				handleOpqaues(insn, value);
+				handleOpaques(insn, value);
+				// fall-through intentional, these and table insns both take int
 			case TABLESWITCH:
 			case LOOKUPSWITCH:
 				if (!(isSubTypeOf(typeChecker, value.getType(), Type.INT_TYPE)
@@ -658,7 +659,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case IF_ICMPGE:
 			case IF_ICMPGT:
 			case IF_ICMPLE:
-				handleOpqaues(insn, value1, value2);
+				handleOpaques(insn, value1, value2);
+				// fall-through intentional, these and i<op> insns both take two ints
 			case IADD:
 			case ISUB:
 			case IMUL:

@@ -494,8 +494,8 @@ public class PrimitiveValue extends AbstractValue {
 	}
 
 	@Override
-	public AbstractValue copy(AbstractInsnNode insn) {
-		return new PrimitiveValue(CollectUtils.add(getInsns(), insn), getType(), getValue());
+	public PrimitiveValue create(List<AbstractInsnNode> collection) {
+		return new PrimitiveValue(collection, getType(), getValue());
 	}
 
 	@Override

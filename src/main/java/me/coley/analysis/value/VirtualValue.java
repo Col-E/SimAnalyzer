@@ -83,8 +83,8 @@ public class VirtualValue extends AbstractValue {
 	}
 
 	@Override
-	public AbstractValue copy(AbstractInsnNode insn) {
-		return onCopy(new VirtualValue(add(getInsns(), insn), getType(), getValue(), typeChecker));
+	public AbstractValue create(List<AbstractInsnNode> collection) {
+		return new VirtualValue(collection, getType(), getValue(), typeChecker);
 	}
 
 	@Override

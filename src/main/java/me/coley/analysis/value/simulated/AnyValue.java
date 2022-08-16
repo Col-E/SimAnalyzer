@@ -11,16 +11,12 @@ import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.*;
-
 /**
  * Value recording the type and value<i>(using reflection and other means to track the existing value)</i>.
  *
  * @author Matt Coley
  */
 public class AnyValue extends AbstractSimulatedValue<Object> {
-
-
 	protected AnyValue(List<AbstractInsnNode> insns, Type type, Object value, TypeChecker typeChecker) {
 		super(insns, type, value, typeChecker);
 	}
@@ -30,8 +26,8 @@ public class AnyValue extends AbstractSimulatedValue<Object> {
 	}
 
 	@Override
-	public AbstractValue copy(AbstractInsnNode insn) {
-		return new AnyValue(add(getInsns(), insn), getType(), getValue(), resultValue, typeChecker);
+	public AbstractValue create(List<AbstractInsnNode> collection) {
+		return new AnyValue(collection, getType(), getValue(), resultValue, typeChecker);
 	}
 
 	/**

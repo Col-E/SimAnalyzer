@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static me.coley.analysis.util.CollectUtils.add;
+
 /**
  * Value wrapper recording the type and value.
  *
@@ -43,16 +45,22 @@ public abstract class AbstractValue implements Value {
 		this.value = value;
 	}
 
+	public abstract AbstractValue create(List<AbstractInsnNode> collection);
+
 	/**
-	 * @param insn The instruction of the value.
-	 * @param typeChecker Type checker for comparison against other types.
-	 * @param type Type.
+	 * @param insn
+	 * 		The instruction of the value.
+	 * @param typeChecker
+	 * 		Type checker for comparison against other types.
+	 * @param type
+	 * 		Type.
+	 *
 	 * @return Type value.
 	 */
 	public static AbstractValue ofDefault(AbstractInsnNode insn, TypeChecker typeChecker, Type type) {
 		if (type == null)
 			return UninitializedValue.UNINITIALIZED_VALUE;
-		switch(type.getSort()) {
+		switch (type.getSort()) {
 			case Type.VOID:
 				return null;
 			case Type.BOOLEAN:
@@ -83,20 +91,12 @@ public abstract class AbstractValue implements Value {
 	 *
 	 * @return Copy of current value, with additional instruction added.
 	 */
-	public abstract AbstractValue copy(AbstractInsnNode insn);
-
-	/**
-	 * Copies any additional values from the current value to the given copy.
-	 *
-	 * @param copy
-	 * 		Copied value.
-	 *
-	 * @return Copied value.
-	 */
-	protected AbstractValue onCopy(AbstractValue copy) {
+	@SuppressWarnings("unchecked")
+	public final <A extends AbstractValue> A copy(AbstractInsnNode insn) {
+		AbstractValue copy = create(add(getInsns(), insn));
 		copy.setNullCheckedBy(getNullCheck());
 		copy.copySource = this;
-		return copy;
+		return (A) copy;
 	}
 
 	/**

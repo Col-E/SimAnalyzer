@@ -56,8 +56,8 @@ public class StringValue extends AbstractSimulatedValue<String> {
 	}
 
 	@Override
-	public AbstractValue copy(AbstractInsnNode insn) {
-		return new StringValue(add(getInsns(), insn), getType(), (String) getValue(), resultValue, typeChecker);
+	public AbstractValue create(List<AbstractInsnNode> collection) {
+		return new StringValue(collection, getType(), (String) getValue(), resultValue, typeChecker);
 	}
 
 	@Override

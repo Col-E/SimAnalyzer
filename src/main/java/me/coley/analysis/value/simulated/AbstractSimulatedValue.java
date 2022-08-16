@@ -75,13 +75,6 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		return value != null;
 	}
 
-
-	@Override
-	public AbstractValue copy(AbstractInsnNode insn) {
-		// We override this to enforce children of this class to implement it properly using the correct type
-		throw new UnsupportedOperationException("Please implement this in any impl class");
-	}
-
 	/**
 	 * @return Result value of the series of connected simulation frames.
 	 */
