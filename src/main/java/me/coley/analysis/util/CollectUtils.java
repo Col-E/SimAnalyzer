@@ -67,11 +67,41 @@ public class CollectUtils {
 	 */
 	public static <T> List<T> distinct(List<T> src) {
 		List<T> copy = new ArrayList<>();
-		for(T t : src) {
+		for (T t : src) {
 			if (copy.contains(t))
 				continue;
 			copy.add(t);
 		}
 		return copy;
+	}
+
+	/**
+	 * @param src1
+	 * 		Original list.
+	 * @param src2
+	 * 		Additional list.
+	 * @param <T>
+	 * 		Type of content.
+	 *
+	 * @return List of disjoint items.
+	 */
+	public static <T> List<T> disjoint(List<T> src1, List<T> src2) {
+		List<T> results = new ArrayList<>(src1);
+		src1.removeAll(src2);
+		return results;
+	}
+
+	/**
+	 * @param value
+	 * 		Single value.
+	 * @param <T>
+	 * 		Type of content.
+	 *
+	 * @return Mutable list wrapping single value.
+	 */
+	public static <T> List<T> of(T value) {
+		List<T> results = new ArrayList<>(1);
+		results.add(value);
+		return results;
 	}
 }

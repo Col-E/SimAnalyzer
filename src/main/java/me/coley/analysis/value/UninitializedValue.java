@@ -18,7 +18,7 @@ public class UninitializedValue extends AbstractValue {
 	}
 
 	@Override
-	public UninitializedValue create(List<AbstractInsnNode> collection) {
+	protected UninitializedValue create(List<AbstractInsnNode> collection) {
 		throw new IllegalStateException("Copying an uninitialized value should not occur!");
 	}
 

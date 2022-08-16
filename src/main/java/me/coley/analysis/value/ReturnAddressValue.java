@@ -30,7 +30,7 @@ public class ReturnAddressValue extends AbstractValue {
 	}
 
 	@Override
-	public ReturnAddressValue create(List<AbstractInsnNode> collection) {
+	protected ReturnAddressValue create(List<AbstractInsnNode> collection) {
 		return new ReturnAddressValue(collection);
 	}
 

@@ -1,6 +1,7 @@
 package me.coley.analysis.value;
 
 import me.coley.analysis.TypeChecker;
+import me.coley.analysis.util.CollectUtils;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -8,6 +9,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.analysis.Value;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +29,7 @@ public abstract class AbstractValue implements Value {
 	private AbstractValue copySource;
 
 	protected AbstractValue(AbstractInsnNode insn, Type type, final Object value) {
-		this(insn == null ? Collections.emptyList() : Collections.singletonList(insn), type, value);
+		this(insn == null ? new ArrayList<>() : CollectUtils.of(insn), type, value);
 	}
 
 	protected AbstractValue(List<AbstractInsnNode> insns, Type type, final Object value) {
@@ -45,7 +47,7 @@ public abstract class AbstractValue implements Value {
 		this.value = value;
 	}
 
-	public abstract AbstractValue create(List<AbstractInsnNode> collection);
+	protected abstract AbstractValue create(List<AbstractInsnNode> collection);
 
 	/**
 	 * @param insn

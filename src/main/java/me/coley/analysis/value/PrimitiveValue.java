@@ -492,7 +492,7 @@ public class PrimitiveValue extends AbstractValue {
 	}
 
 	@Override
-	public PrimitiveValue create(List<AbstractInsnNode> collection) {
+	protected PrimitiveValue create(List<AbstractInsnNode> collection) {
 		return new PrimitiveValue(collection, getType(), getValue());
 	}
 

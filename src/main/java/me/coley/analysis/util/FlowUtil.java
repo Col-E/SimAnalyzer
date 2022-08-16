@@ -39,9 +39,14 @@ public class FlowUtil {
 
 	/**
 	 * Check if the used instruction which uses some nullable value is safe to use.
-	 * @param blockHandler Block handler to determine scope.
-	 * @param value Value to check if it has been null checked.
-	 * @param usage Instruction with potential action against a {@code null} value.
+	 *
+	 * @param blockHandler
+	 * 		Block handler to determine scope.
+	 * @param value
+	 * 		Value to check if it has been null checked.
+	 * @param usage
+	 * 		Instruction with potential action against a {@code null} value.
+	 *
 	 * @return {@code true} if the value has been null checked and is safe to use at the given usage instruction.
 	 */
 	public static boolean isNullChecked(BlockHandler blockHandler, AbstractValue value, AbstractInsnNode usage) {
@@ -56,11 +61,11 @@ public class FlowUtil {
 		AbstractInsnNode safeInsn = null;
 		if (nullCheck.getOpcode() == IFNULL) {
 			safeInsn = nullCheck.getNext();
-		} else  {
+		} else {
 			safeInsn = nullCheck.label;
 		}
 		// Determine if the block containing the safe index also contains the usage instruction.
-		int safeIndex =  InsnUtil.index(safeInsn);
+		int safeIndex = InsnUtil.index(safeInsn);
 		return blockHandler.getBlockAtIndex(safeIndex).getInsns().contains(usage);
 	}
 }

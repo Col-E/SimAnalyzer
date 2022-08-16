@@ -6,7 +6,7 @@ import me.coley.analysis.SimInterpreter;
 import me.coley.analysis.TestUtils;
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.PrimitiveValue;
-import me.coley.analysis.value.simulated.StringValue;
+import me.coley.analysis.value.simulated.StringSimulatedValue;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.ClassNode;
@@ -15,8 +15,6 @@ import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
 import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 // TODO: Expand with more obfuscation patterns to assert most common forms of string encryption can be simulated
 
@@ -36,7 +34,7 @@ public class TestStringDecrypt extends TestUtils {
 			protected ParameterFactory createParameterFactory() {
 				return (isInstanceMethod, local, type) -> {
 					if (local == 0) {
-						return StringValue.of(Collections.emptyList(), createTypeChecker(), text);
+						return StringSimulatedValue.of(Collections.emptyList(), createTypeChecker(), text);
 					} else if (local == 1) {
 						return PrimitiveValue.ofInt(Collections.emptyList(), key);
 					}

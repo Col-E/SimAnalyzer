@@ -7,8 +7,8 @@ import me.coley.analysis.exception.TypeMismatchKind;
 import me.coley.analysis.util.FlowUtil;
 import me.coley.analysis.value.*;
 import me.coley.analysis.value.simulated.AbstractSimulatedValue;
-import me.coley.analysis.value.simulated.AnyValue;
-import me.coley.analysis.value.simulated.StringValue;
+import me.coley.analysis.value.simulated.ReflectionSimulatedValue;
+import me.coley.analysis.value.simulated.StringSimulatedValue;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -356,7 +356,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				} else if (value instanceof Double) {
 					return PrimitiveValue.ofDouble(insn, (double) value);
 				} else if (value instanceof String) {
-					return StringValue.of(insn, typeChecker, (String) value);
+					return StringSimulatedValue.of(insn, typeChecker, (String) value);
 				} else if (value instanceof Type) {
 					Type type =  (Type) value;
 					int sort = type.getSort();
@@ -897,6 +897,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public AbstractValue naryOperation(AbstractInsnNode insn, List<? extends AbstractValue> values) throws AnalyzerException {
+		List<AbstractInsnNode> argContributingInsns = values.stream()
+				.flatMap(value -> value.getInsns().stream())
+				.collect(Collectors.toList());
 		int opcode = insn.getOpcode();
 		if (opcode == MULTIANEWARRAY) {
 			// Multi-dimensional array args must all be numeric
@@ -904,9 +907,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				if (!Type.INT_TYPE.equals(value.getType()))
 					throw new AnalyzerException(insn, "MULTIANEWARRAY argument was not numeric!",
 							newValue(insn, Type.INT_TYPE), value);
-			return newValue(add(values.stream()
-						.flatMap(value -> value.getInsns().stream())
-						.collect(Collectors.toList()), insn),
+			return newValue(add(argContributingInsns, insn),
 					Type.getType(((MultiANewArrayInsnNode) insn).desc));
 		}
 		// Handle method invokes
@@ -936,23 +937,24 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		}
 		// Get value
 		if (opcode == INVOKEDYNAMIC) {
-			Type retType = Type.getReturnType(((InvokeDynamicInsnNode) insn).desc);
-			return newValue(insn, retType);
+			InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
+			Type retType = Type.getReturnType(indy.desc);
+			return newValue(add(argContributingInsns, insn), retType);
 		} else if (opcode == INVOKESTATIC) {
 			// Attempt to create simulated value
 			MethodInsnNode min = (MethodInsnNode) insn;
 			try {
-				AbstractValue value = AnyValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
-				if (value != null)
+				AbstractValue value = ReflectionSimulatedValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
+				if (value != null) {
+					value.getInsns().addAll(disjoint(value.getInsns(), argContributingInsns));
 					return value;
+				}
 			} catch(SimFailedException ex) {
 				// Do nothing for simulation failing, this is expected in MOST cases.
 			}
 			// Fallback to virtual value
 			Type retType = Type.getReturnType(((MethodInsnNode) insn).desc);
-			return newValue(add(values.stream()
-						.flatMap(value -> value.getInsns().stream())
-						.collect(Collectors.toList()), insn), retType);
+			return newValue(add(argContributingInsns, insn), retType);
 		}
 		// INVOKEVIRTUAL, INVOKESPECIAL, INVOKEINTERFACE
 		MethodInsnNode min = (MethodInsnNode) insn;
@@ -975,19 +977,32 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				AbstractSimulatedValue<?> simObject = (AbstractSimulatedValue<?>) ownerValue;
 				List<? extends AbstractValue> arguments = values.subList(1, values.size());
 				try {
-					return simObject.ofVirtualInvoke(min, arguments);
-				} catch(SimFailedException ex) {
+					AbstractValue refValue = simObject.ofVirtualInvoke(min, arguments);
+					if (refValue != null) {
+						refValue.getInsns().addAll(disjoint(refValue.getInsns(), argContributingInsns));
+					}
+					return refValue;
+				} catch (SimFailedException ex) {
 					// Do nothing for simulation failing, this is expected in MOST cases.
 					// This will fallback on VirtualValue behavior
 				}
 			}
 			if (ownerValue instanceof VirtualValue) {
 				VirtualValue virtualOwner = (VirtualValue) ownerValue;
-				return virtualOwner.ofMethodRef(insn, typeChecker, Type.getMethodType(((MethodInsnNode) insn).desc));
+				AbstractValue refValue = virtualOwner.ofMethodRef(insn, typeChecker, Type.getMethodType(((MethodInsnNode) insn).desc));
+				if (refValue != null) {
+					refValue.getInsns().addAll(disjoint(refValue.getInsns(), argContributingInsns));
+				}
+				return refValue;
 			}
 			// Check if we have a null value that has been null checked
-			if (ownerValue instanceof NullConstantValue && FlowUtil.isNullChecked(getBlockHandler(), ownerValue, insn))
-				return newValue(insn, Type.getMethodType(min.desc).getReturnType());
+			if (ownerValue instanceof NullConstantValue && FlowUtil.isNullChecked(getBlockHandler(), ownerValue, insn)) {
+				AbstractValue refValue = newValue(insn, Type.getMethodType(min.desc).getReturnType());
+				if (refValue != null) {
+					refValue.getInsns().addAll(disjoint(refValue.getInsns(), argContributingInsns));
+				}
+				return refValue;
+			}
 			throw new AnalyzerException(insn, "Virtual method context could not be resolved");
 		}
 	}

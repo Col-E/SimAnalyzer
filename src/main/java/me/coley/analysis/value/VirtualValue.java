@@ -80,7 +80,7 @@ public class VirtualValue extends AbstractValue {
 	}
 
 	@Override
-	public AbstractValue create(List<AbstractInsnNode> collection) {
+	protected AbstractValue create(List<AbstractInsnNode> collection) {
 		return new VirtualValue(collection, getType(), getValue(), typeChecker);
 	}
 

@@ -178,7 +178,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 							.map(AbstractValue::getValue).toArray();
 					c.setAccessible(true);
 					Object retVal = c.newInstance(argValues);
-					return new AnyValue(insns,
+					return new ReflectionSimulatedValue(insns,
 							Type.getType(retVal.getClass()), retVal, typeChecker);
 				}
 			}
@@ -186,7 +186,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		// Check against blacklist. They are do-nothing methods that we want to skip.
 		for (String[] def : BLACKLISTED_METHODS)
 			if (def[0].equals(name) && def[1].equals(desc.getDescriptor()))
-				return new AnyValue(insns,
+				return new ReflectionSimulatedValue(insns,
 						getType(), getValue(), typeChecker);
 		// Check against normal methods
 		Type retType = desc.getReturnType();
@@ -220,7 +220,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 						return unboxed(insns, retVal);
 					} else {
 						// Not a primitive
-						return new AnyValue(insns, Type.getType(retVal.getClass()), retVal, (GetSet<Object>) resultValue, typeChecker);
+						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal, (GetSet<Object>) resultValue, typeChecker);
 					}
 				}
 			}
@@ -282,7 +282,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 						return unboxed(insns, retVal);
 					} else {
 						// Not a primitive
-						return new AnyValue(insns, Type.getType(retVal.getClass()), retVal, typeChecker);
+						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal, typeChecker);
 					}
 				}
 			}
@@ -369,9 +369,9 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 
 	static {
 		TYPE_PRODUCERS.put("java/lang/StringBuilder", (insns, typeChecker) ->
-				new AnyValue(insns, Type.getObjectType("java/lang/StringBuilder"), new StringBuilder(), typeChecker));
+				new ReflectionSimulatedValue(insns, Type.getObjectType("java/lang/StringBuilder"), new StringBuilder(), typeChecker));
 		TYPE_PRODUCERS.put("java/lang/StringBuffer", (insns, typeChecker) ->
-				new AnyValue(insns, Type.getObjectType("java/lang/StringBuffer"), new StringBuffer(), typeChecker));
-		TYPE_PRODUCERS.put("java/lang/String", (insns, typeChecker) -> StringValue.of(insns, typeChecker, ""));
+				new ReflectionSimulatedValue(insns, Type.getObjectType("java/lang/StringBuffer"), new StringBuffer(), typeChecker));
+		TYPE_PRODUCERS.put("java/lang/String", (insns, typeChecker) -> StringSimulatedValue.of(insns, typeChecker, ""));
 	}
 }

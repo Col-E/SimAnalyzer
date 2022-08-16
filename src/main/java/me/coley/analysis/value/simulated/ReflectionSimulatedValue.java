@@ -16,18 +16,18 @@ import java.util.List;
  *
  * @author Matt Coley
  */
-public class AnyValue extends AbstractSimulatedValue<Object> {
-	protected AnyValue(List<AbstractInsnNode> insns, Type type, Object value, TypeChecker typeChecker) {
+public class ReflectionSimulatedValue extends AbstractSimulatedValue<Object> {
+	protected ReflectionSimulatedValue(List<AbstractInsnNode> insns, Type type, Object value, TypeChecker typeChecker) {
 		super(insns, type, value, typeChecker);
 	}
 
-	protected AnyValue(List<AbstractInsnNode> insns, Type type, Object value, GetSet<Object> resultValue, TypeChecker typeChecker) {
+	protected ReflectionSimulatedValue(List<AbstractInsnNode> insns, Type type, Object value, GetSet<Object> resultValue, TypeChecker typeChecker) {
 		super(insns, type, value, resultValue, typeChecker);
 	}
 
 	@Override
-	public AbstractValue create(List<AbstractInsnNode> collection) {
-		return new AnyValue(collection, getType(), getValue(), resultValue, typeChecker);
+	protected AbstractValue create(List<AbstractInsnNode> collection) {
+		return new ReflectionSimulatedValue(collection, getType(), getValue(), resultValue, typeChecker);
 	}
 
 	/**

@@ -6,7 +6,7 @@ import me.coley.analysis.StaticInvokeFactory;
 import me.coley.analysis.TestUtils;
 import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.value.AbstractValue;
-import me.coley.analysis.value.simulated.StringValue;
+import me.coley.analysis.value.simulated.StringSimulatedValue;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -56,7 +56,7 @@ public class TestStaticInvokeFactory extends TestUtils {
 		public AbstractValue invokeStatic(MethodInsnNode insn, List<?
 				extends AbstractValue> arguments) {
 			if (insn.name.equals("getHello")) {
-				return StringValue.of((List<AbstractInsnNode>) null, null, "Hello World");
+				return StringSimulatedValue.of((List<AbstractInsnNode>) null, null, "Hello World");
 			}
 			return null;
 		}

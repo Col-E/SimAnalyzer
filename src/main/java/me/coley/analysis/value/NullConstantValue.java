@@ -31,7 +31,7 @@ public class NullConstantValue extends AbstractValue {
 	public static NullConstantValue newNull(AbstractInsnNode insn) { return new NullConstantValue(insn); }
 
 	@Override
-	public NullConstantValue create(List<AbstractInsnNode> collection) {
+	protected NullConstantValue create(List<AbstractInsnNode> collection) {
 		return new NullConstantValue(collection);
 	}
 

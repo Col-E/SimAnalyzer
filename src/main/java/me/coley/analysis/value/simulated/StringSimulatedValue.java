@@ -11,19 +11,17 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import java.util.Collections;
 import java.util.List;
 
-import static me.coley.analysis.util.CollectUtils.*;
-
 /**
  * Value recording the current string value.
  *
  * @author Matt Coley
  */
-public class StringValue extends AbstractSimulatedValue<String> {
-	protected StringValue(List<AbstractInsnNode> insns, Type type, String value, TypeChecker typeChecker) {
+public class StringSimulatedValue extends AbstractSimulatedValue<String> {
+	protected StringSimulatedValue(List<AbstractInsnNode> insns, Type type, String value, TypeChecker typeChecker) {
 		super(insns, type, value, typeChecker);
 	}
 
-	protected StringValue(List<AbstractInsnNode> insns, Type type, String value, GetSet<String> resultValue, TypeChecker typeChecker) {
+	protected StringSimulatedValue(List<AbstractInsnNode> insns, Type type, String value, GetSet<String> resultValue, TypeChecker typeChecker) {
 		super(insns, type, value, resultValue, typeChecker);
 	}
 
@@ -37,7 +35,7 @@ public class StringValue extends AbstractSimulatedValue<String> {
 	 *
 	 * @return String value.
 	 */
-	public static StringValue of(AbstractInsnNode insn, TypeChecker typeChecker, String value) {
+	public static StringSimulatedValue of(AbstractInsnNode insn, TypeChecker typeChecker, String value) {
 		return of(Collections.singletonList(insn), typeChecker, value);
 	}
 
@@ -51,13 +49,13 @@ public class StringValue extends AbstractSimulatedValue<String> {
 	 *
 	 * @return String value.
 	 */
-	public static StringValue of(List<AbstractInsnNode> insns, TypeChecker typeChecker, String value) {
-		return new StringValue(insns, Type.getObjectType("java/lang/String"), value, typeChecker);
+	public static StringSimulatedValue of(List<AbstractInsnNode> insns, TypeChecker typeChecker, String value) {
+		return new StringSimulatedValue(insns, Type.getObjectType("java/lang/String"), value, typeChecker);
 	}
 
 	@Override
-	public AbstractValue create(List<AbstractInsnNode> collection) {
-		return new StringValue(collection, getType(), (String) getValue(), resultValue, typeChecker);
+	protected AbstractValue create(List<AbstractInsnNode> collection) {
+		return new StringSimulatedValue(collection, getType(), (String) getValue(), resultValue, typeChecker);
 	}
 
 	@Override
