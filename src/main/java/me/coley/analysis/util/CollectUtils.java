@@ -22,7 +22,7 @@ public class CollectUtils {
 	public static <T> List<T> add(List<T> src, T additional) {
 		List<T> list = new ArrayList<>(src);
 		list.add(additional);
-		return list;
+		return distinct(list);
 	}
 
 	/**
@@ -87,8 +87,8 @@ public class CollectUtils {
 	 */
 	public static <T> List<T> disjoint(List<T> src1, List<T> src2) {
 		List<T> results = new ArrayList<>(src1);
-		src1.removeAll(src2);
-		return results;
+		results.removeAll(src2);
+		return distinct(results);
 	}
 
 	/**

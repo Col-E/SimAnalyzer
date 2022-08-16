@@ -9,10 +9,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.analysis.Value;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static me.coley.analysis.util.CollectUtils.add;
 
@@ -167,7 +164,18 @@ public abstract class AbstractValue implements Value {
 	 * @return Instructions that contributed to the current value.
 	 */
 	public List<AbstractInsnNode> getInsns() {
-		return insns;
+		return Collections.unmodifiableList(insns);
+	}
+
+	public void addContributing(AbstractInsnNode contributing) {
+		if (!insns.contains(contributing))
+			insns.add(contributing);
+	}
+
+	public void addContributing(Collection<AbstractInsnNode> contributing) {
+		contributing = new ArrayList<>(contributing);
+		contributing.removeAll(insns);
+		insns.addAll(contributing);
 	}
 
 	/**
@@ -218,7 +226,9 @@ public abstract class AbstractValue implements Value {
 			return "<JSR_RET>";
 		else if (isNull())
 			return "<" + type + ":NULL>";
-		else
+		else if (isValueResolved())
 			return "<" + type + ":" + value + ">";
+		else
+			return "<" + type + ">";
 	}
 }

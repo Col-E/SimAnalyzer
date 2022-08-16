@@ -899,6 +899,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	public AbstractValue naryOperation(AbstractInsnNode insn, List<? extends AbstractValue> values) throws AnalyzerException {
 		List<AbstractInsnNode> argContributingInsns = values.stream()
 				.flatMap(value -> value.getInsns().stream())
+				.distinct()
 				.collect(Collectors.toList());
 		int opcode = insn.getOpcode();
 		if (opcode == MULTIANEWARRAY) {
@@ -946,7 +947,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			try {
 				AbstractValue value = ReflectionSimulatedValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
 				if (value != null) {
-					value.getInsns().addAll(disjoint(value.getInsns(), argContributingInsns));
+					value.addContributing(disjoint(argContributingInsns, value.getInsns()));
 					return value;
 				}
 			} catch(SimFailedException ex) {
@@ -972,6 +973,10 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			// Don't you just LOVE edge cases?
 			return null;
 		} else {
+			// Special case for <init>, want to tell owner we contributed
+			if (opcode == INVOKESPECIAL && min.name.equals("<init>")) {
+				ownerValue.addContributing(min);
+			}
 			// Get return value
 			if (ownerValue instanceof AbstractSimulatedValue) {
 				AbstractSimulatedValue<?> simObject = (AbstractSimulatedValue<?>) ownerValue;
@@ -979,7 +984,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				try {
 					AbstractValue refValue = simObject.ofVirtualInvoke(min, arguments);
 					if (refValue != null) {
-						refValue.getInsns().addAll(disjoint(refValue.getInsns(), argContributingInsns));
+						refValue.addContributing(disjoint(argContributingInsns, refValue.getInsns()));
 					}
 					return refValue;
 				} catch (SimFailedException ex) {
@@ -991,7 +996,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				VirtualValue virtualOwner = (VirtualValue) ownerValue;
 				AbstractValue refValue = virtualOwner.ofMethodRef(insn, typeChecker, Type.getMethodType(((MethodInsnNode) insn).desc));
 				if (refValue != null) {
-					refValue.getInsns().addAll(disjoint(refValue.getInsns(), argContributingInsns));
+					refValue.addContributing(disjoint(argContributingInsns, refValue.getInsns()));
 				}
 				return refValue;
 			}
@@ -999,7 +1004,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			if (ownerValue instanceof NullConstantValue && FlowUtil.isNullChecked(getBlockHandler(), ownerValue, insn)) {
 				AbstractValue refValue = newValue(insn, Type.getMethodType(min.desc).getReturnType());
 				if (refValue != null) {
-					refValue.getInsns().addAll(disjoint(refValue.getInsns(), argContributingInsns));
+					refValue.addContributing(disjoint(argContributingInsns, refValue.getInsns()));
 				}
 				return refValue;
 			}

@@ -9,7 +9,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.Frame;
 
 import java.util.List;
 
@@ -22,8 +21,6 @@ public class TestInstructionTracking extends TestUtils {
 		MethodNode method = getMethod(node, "helloVariables");
 		SimFrame[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
-		// TODO: The DUP/InvokeSpecial should be included because they act on the value that was created
-		//       that contributes
 		// The following is the disassembly of the method "helloVariables"
 		//
 		// Lines prefixed with ">>>>>>>>>>>>>" indicate they are contributing instructions
@@ -33,8 +30,8 @@ public class TestInstructionTracking extends TestUtils {
 		// A:
 		// >>>>>>>>>>>>> SWAP
 		// >>>>>>>>>>>>> NEW java/lang/StringBuilder
-		// DUP
-		// INVOKESPECIAL java/lang/StringBuilder.<init>()V
+		// >>>>>>>>>>>>> DUP
+		// >>>>>>>>>>>>> INVOKESPECIAL java/lang/StringBuilder.<init>()V
 		// >>>>>>>>>>>>> SWAP
 		// >>>>>>>>>>>>> INVOKEVIRTUAL java/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 		// >>>>>>>>>>>>> LDC " "
@@ -42,7 +39,7 @@ public class TestInstructionTracking extends TestUtils {
 		// >>>>>>>>>>>>> SWAP
 		// >>>>>>>>>>>>> INVOKEVIRTUAL java/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 		// >>>>>>>>>>>>> INVOKEVIRTUAL java/lang/StringBuilder.toString()Ljava/lang/String;
-		// GETSTATIC java/lang/System.out Ljava/io/PrintStream;
+		// <<<<<<<<<<<<< GETSTATIC java/lang/System.out Ljava/io/PrintStream; // Included because of SWAP, so it being on the stack ties it up in 'usage'
 		// >>>>>>>>>>>>> SWAP
 		// INVOKEVIRTUAL java/io/PrintStream.println(Ljava/lang/String;)V
 		// GOTO D
@@ -57,7 +54,7 @@ public class TestInstructionTracking extends TestUtils {
 		// RETURN
 		AbstractValue value = FrameUtil.getTopStack(frames[index]);
 		List<AbstractInsnNode> insns = value.getInsns();
-		assertEquals(12, insns.size());
+		assertEquals(15, insns.size());
 		assertEquals("Hello World", value.getValue());
 	}
 }
