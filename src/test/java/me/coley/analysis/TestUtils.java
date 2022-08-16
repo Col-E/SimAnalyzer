@@ -1,15 +1,9 @@
 package me.coley.analysis;
 
-import me.coley.analysis.value.AbstractValue;
 import org.junit.jupiter.api.Assertions;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.Frame;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +48,7 @@ public class TestUtils {
 	public static ClassNode getFromName(String path) {
 		try {
 			return getFromBytes(Files.readAllBytes(getClasspathFile(path).toPath()));
-		} catch(IOException ex) {
+		} catch (IOException ex) {
 			Assertions.fail(ex);
 			throw new IllegalStateException();
 		}
@@ -72,7 +66,7 @@ public class TestUtils {
 			ClassNode node = new ClassNode();
 			cr.accept(node, ClassReader.SKIP_FRAMES);
 			return node;
-		} catch(Throwable t) {
+		} catch (Throwable t) {
 			Assertions.fail(t);
 			throw new IllegalStateException();
 		}
@@ -89,7 +83,7 @@ public class TestUtils {
 	 * @return Method node inclass.
 	 */
 	public static MethodNode getMethod(ClassNode node, String name) {
-		for(MethodNode mn : node.methods)
+		for (MethodNode mn : node.methods)
 			if (mn.name.endsWith(name))
 				return mn;
 		Assertions.fail("No method by name '" + name + "' in class: " + node.name);
@@ -106,7 +100,7 @@ public class TestUtils {
 	 */
 	public static int getMethodCallIndex(InsnList insns, String name) {
 		int i = 0;
-		for(AbstractInsnNode insn : insns) {
+		for (AbstractInsnNode insn : insns) {
 			if (insn instanceof MethodInsnNode) {
 				MethodInsnNode min = (MethodInsnNode) insn;
 				if (min.name.endsWith(name))
@@ -130,10 +124,10 @@ public class TestUtils {
 	 * @throws AnalyzerException
 	 * 		When analysis fails.
 	 */
-	public static Frame<AbstractValue>[] getFrames(String owner, MethodNode method) throws AnalyzerException {
+	public static SimFrame[] getFrames(String owner, MethodNode method) throws AnalyzerException {
 		SimInterpreter interpreter = new SimInterpreter();
 		SimAnalyzer analyzer = new SimAnalyzer(interpreter);
-		Frame<AbstractValue>[] frames = analyzer.analyze(owner, method);
+		SimFrame[] frames = analyzer.analyze(owner, method);
 		if (interpreter.hasReportedProblems())
 			Assertions.fail(interpreter.getProblemInsns().values().iterator().next());
 		return frames;

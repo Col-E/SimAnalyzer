@@ -3,6 +3,7 @@ package me.coley.analysis;
 import me.coley.analysis.cfg.BlockHandler;
 import me.coley.analysis.exception.ResolvableAnalyzerException;
 import me.coley.analysis.exception.ResolvableExceptionFactory;
+import me.coley.analysis.util.Flow;
 import me.coley.analysis.util.FlowUtil;
 import me.coley.analysis.util.InternalAnalyzerHackery;
 import me.coley.analysis.util.TypeUtil;
@@ -15,7 +16,9 @@ import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,6 +30,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	private final InternalAnalyzerHackery hackery = new InternalAnalyzerHackery(this);
 	private final OpaqueHandler opaqueHandler = new OpaqueHandler(hackery);
 	private final SimInterpreter interpreter;
+	private final List<Flow> flows = new ArrayList<>();
 	private boolean throwUnresolvedAnalyzerErrors = true;
 	private boolean skipDeadCodeBlocks = true;
 	private MethodNode method;
@@ -59,14 +63,32 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 */
 	private void reset(String owner, MethodNode method) {
 		this.method = method;
+		flows.clear();
 		opaqueHandler.reset();
 		interpreter.reset(owner, method);
 	}
 
 	@Override
-	public Frame<AbstractValue>[] analyze(String owner, MethodNode method) throws AnalyzerException {
+	public SimFrame[] analyze(String owner, MethodNode method) throws AnalyzerException {
 		reset(owner, method);
-		Frame<AbstractValue>[] values = super.analyze(owner, method);
+		Frame<AbstractValue>[] frames = super.analyze(owner, method);
+		SimFrame[] simFrames = copy(frames);
+		// Assign frames their instructions
+		AbstractInsnNode[] insns = method.instructions.toArray();
+		System.out.println("Size: " + simFrames.length);
+		for (int i = 0; i < insns.length; i++) {
+			SimFrame frame = simFrames[i];
+			if (frame != null)
+				frame.setInstruction(insns[i]);
+			else
+				System.out.println("Empty: " + i);
+		}
+		// Populate recorded control flow
+		for (Flow flow : flows) {
+			SimFrame from = simFrames[flow.getFrom()];
+			SimFrame to = simFrames[flow.getTo()];
+			from.flowsInto(to);
+		}
 		// If the interpreter has problems, check if they've been resolved by checking frames
 		if (interpreter.hasReportedProblems()) {
 			// Check if the error logged no longer applies given the stack analysis results
@@ -74,7 +96,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 			for (Map.Entry<AbstractInsnNode, AnalyzerException> e :
 					new HashSet<>(interpreter.getProblemInsns().entrySet())) {
 				if (e.getValue() instanceof ResolvableAnalyzerException) {
-					if (((ResolvableAnalyzerException) e.getValue()).validate(method, values)) {
+					if (((ResolvableAnalyzerException) e.getValue()).validate(method, frames)) {
 						interpreter.getProblemInsns().remove(e.getKey());
 					}
 				}
@@ -83,7 +105,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 			if (throwUnresolvedAnalyzerErrors && !interpreter.getProblemInsns().isEmpty())
 				throw interpreter.getProblemInsns().values().iterator().next();
 		}
-		return values;
+		return simFrames;
 	}
 
 	@Override
@@ -98,12 +120,14 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 
 	@Override
 	protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
+		flows.add(new Flow(insnIndex, successorIndex));
 		interpreter.getBlockHandler().add(insnIndex, successorIndex);
 		return true;
 	}
 
 	@Override
 	protected void newControlFlowEdge(int insnIndex, int successorIndex) {
+		flows.add(new Flow(insnIndex, successorIndex));
 		// Create block when necessary
 		if (FlowUtil.isFlowModifier(method, insnIndex, successorIndex)) {
 			interpreter.getBlockHandler().add(insnIndex, successorIndex);
@@ -247,5 +271,15 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 */
 	public BlockHandler getBlockHandler() {
 		return interpreter.getBlockHandler();
+	}
+
+	@SuppressWarnings("SuspiciousSystemArraycopy") // sus
+	private static SimFrame[] copy(Frame<AbstractValue>[] values) {
+		// Hiding this here because casting array wrapper type doesn't work
+		// We want to make it clear to users the frame type is SimFrame.
+		// This makes it so that usage doesn't force them to cast everywhere.
+		SimFrame[] copy = new SimFrame[values.length];
+		System.arraycopy(values, 0, copy, 0, values.length);
+		return copy;
 	}
 }

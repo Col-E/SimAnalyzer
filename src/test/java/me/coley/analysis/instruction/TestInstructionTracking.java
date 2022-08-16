@@ -1,5 +1,6 @@
 package me.coley.analysis.instruction;
 
+import me.coley.analysis.SimFrame;
 import me.coley.analysis.TestUtils;
 import me.coley.analysis.util.FrameUtil;
 import me.coley.analysis.value.AbstractValue;
@@ -19,7 +20,7 @@ public class TestInstructionTracking extends TestUtils {
 	public void testConcatStrings_SwapOrder() throws AnalyzerException {
 		ClassNode node = getFromName("bin/custom/misc/HelloWorldSwapOrdering.class");
 		MethodNode method = getMethod(node, "helloVariables");
-		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
+		SimFrame[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
 		// TODO: The DUP/InvokeSpecial should be included because they act on the value that was created
 		//       that contributes

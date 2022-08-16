@@ -10,7 +10,7 @@ import java.lang.reflect.Field;
  * @author Matt Coley
  */
 public class InsnUtil {
-	private static Field INSN_INDEX;
+	private static final Field INSN_INDEX;
 
 	/**
 	 * Calculate the index of an instruction.

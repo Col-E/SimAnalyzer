@@ -1,5 +1,6 @@
 package me.coley.analysis.value;
 
+import me.coley.analysis.SimFrame;
 import me.coley.analysis.TestUtils;
 import me.coley.analysis.util.FrameUtil;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ public class TestNonLinearValuePropagation extends TestUtils {
 		// The analyzer will properly handle flow to detect the value of "Hello World"
 		ClassNode node = getFromName("bin/custom/misc/HelloWorldGotoOrdering.class");
 		MethodNode method = getMethod(node, "helloVariables");
-		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
+		SimFrame[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
 		assertEquals("Hello World", FrameUtil.getTopStackLiteral(frames[index]));
 	}
@@ -31,7 +32,7 @@ public class TestNonLinearValuePropagation extends TestUtils {
 		// The analyzer will properly handle flow to detect the value of "Hello World"
 		ClassNode node = getFromName("bin/custom/misc/HelloWorldSwapOrdering.class");
 		MethodNode method = getMethod(node, "helloVariables");
-		Frame<AbstractValue>[] frames = TestUtils.getFrames(node.name, method);
+		SimFrame[] frames = TestUtils.getFrames(node.name, method);
 		int index = getMethodCallIndex(method.instructions, "println");
 		assertEquals("Hello World", FrameUtil.getTopStackLiteral(frames[index]));
 	}

@@ -2,10 +2,10 @@ package me.coley.analysis;
 
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.UninitializedValue;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Frame;
-import org.objectweb.asm.tree.analysis.Interpreter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -17,6 +17,9 @@ import java.util.Set;
  */
 public class SimFrame extends Frame<AbstractValue> {
 	private final Set<Integer> reservedSlots = new HashSet<>();
+	private final Set<SimFrame> flowInputs = new HashSet<>();
+	private final Set<SimFrame> flowOutputs = new HashSet<>();
+	private AbstractInsnNode instruction;
 
 	/**
 	 * New frame of size.
@@ -44,10 +47,10 @@ public class SimFrame extends Frame<AbstractValue> {
 	public void setLocal(int index, AbstractValue value) {
 		if (value != UninitializedValue.UNINITIALIZED_VALUE) {
 			// Check against reserved slots used by double and long locals
-			if(reservedSlots.contains(index))
+			if (reservedSlots.contains(index))
 				throw new IllegalStateException("Cannot set local[" + index + "] " +
 						"since it is reserved by a double/long (which reserves two slots)");
-			if(value.getValue() instanceof Double || value.getValue() instanceof Long)
+			if (value.getValue() instanceof Double || value.getValue() instanceof Long)
 				reservedSlots.add(index + 1);
 		}
 		// Update local
@@ -59,13 +62,34 @@ public class SimFrame extends Frame<AbstractValue> {
 		reservedSlots.clear();
 	}
 
-	@Override
-	public boolean merge(Frame<? extends AbstractValue> frame, Interpreter<AbstractValue> interpreter) throws AnalyzerException {
-		return super.merge(frame, interpreter);
+	/**
+	 * @return Instruction of this frame. Executing it will result in the stack/locals state seen in
+	 * the next {@link SimFrame}.
+	 * <br>
+	 * For example {@code ACONST_NULL} would yield a {@code null} appearing in the next frame.
+	 */
+	public AbstractInsnNode getInstruction() {
+		return instruction;
 	}
 
-	@Override
-	public boolean merge(Frame<? extends AbstractValue> frame, boolean[] localsUsed) {
-		return super.merge(frame, localsUsed);
+	/**
+	 * Called by {@link SimAnalyzer#analyze(String, MethodNode)}.
+	 *
+	 * @param instruction
+	 * 		Instruction of this frame.
+	 */
+	public void setInstruction(AbstractInsnNode instruction) {
+		this.instruction = instruction;
+	}
+
+	/**
+	 * Called by {@link SimAnalyzer#analyze(String, MethodNode)}.
+	 *
+	 * @param to
+	 * 		Frame this one flows into.
+	 */
+	public void flowsInto(SimFrame to) {
+		flowOutputs.add(to);
+		to.flowInputs.add(this);
 	}
 }
