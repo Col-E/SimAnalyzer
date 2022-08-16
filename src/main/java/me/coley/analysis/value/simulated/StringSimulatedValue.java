@@ -21,7 +21,8 @@ public class StringSimulatedValue extends AbstractSimulatedValue<String> {
 		super(insns, type, value, typeChecker);
 	}
 
-	protected StringSimulatedValue(List<AbstractInsnNode> insns, Type type, String value, GetSet<String> resultValue, TypeChecker typeChecker) {
+	protected StringSimulatedValue(List<AbstractInsnNode> insns, Type type, String value,
+								   GetSet<String> resultValue, TypeChecker typeChecker) {
 		super(insns, type, value, resultValue, typeChecker);
 	}
 
@@ -59,7 +60,8 @@ public class StringSimulatedValue extends AbstractSimulatedValue<String> {
 	}
 
 	@Override
-	public AbstractValue ofVirtualInvoke(MethodInsnNode min, List<? extends AbstractValue> arguments) throws SimFailedException {
+	public AbstractValue ofVirtualInvoke(MethodInsnNode min, List<? extends AbstractValue> arguments)
+			throws SimFailedException {
 		// TODO: Special case handling
 		return defaultOfVirtualInvoke(min, arguments);
 	}

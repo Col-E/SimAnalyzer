@@ -21,7 +21,8 @@ public class ReflectionSimulatedValue extends AbstractSimulatedValue<Object> {
 		super(insns, type, value, typeChecker);
 	}
 
-	protected ReflectionSimulatedValue(List<AbstractInsnNode> insns, Type type, Object value, GetSet<Object> resultValue, TypeChecker typeChecker) {
+	protected ReflectionSimulatedValue(List<AbstractInsnNode> insns, Type type, Object value,
+									   GetSet<Object> resultValue, TypeChecker typeChecker) {
 		super(insns, type, value, resultValue, typeChecker);
 	}
 

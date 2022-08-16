@@ -64,7 +64,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		this(insns, type, value, new GetSet<>(value), typeChecker);
 	}
 
-	protected AbstractSimulatedValue(List<AbstractInsnNode> insns, Type type, T value, GetSet<T> resultValue, TypeChecker typeChecker) {
+	protected AbstractSimulatedValue(List<AbstractInsnNode> insns, Type type, T value,
+									 GetSet<T> resultValue, TypeChecker typeChecker) {
 		// Called to add on to an existing chain of simulated values.
 		super(insns, type, copyValue(value), typeChecker);
 		this.resultValue = resultValue;
@@ -103,7 +104,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 * @throws SimFailedException
 	 * 		When the method call could not be simulated.
 	 */
-	public abstract AbstractValue ofVirtualInvoke(MethodInsnNode min, List<? extends AbstractValue> arguments) throws SimFailedException;
+	public abstract AbstractValue ofVirtualInvoke(MethodInsnNode min, List<? extends AbstractValue> arguments)
+			throws SimFailedException;
 
 	/**
 	 * A default impl to use as a fallback of child implementations of {@link #ofVirtualInvoke(MethodInsnNode, List)}.
@@ -118,7 +120,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 * @throws SimFailedException
 	 * 		When the method call could not be simulated.
 	 */
-	protected AbstractValue defaultOfVirtualInvoke(MethodInsnNode min, List<? extends AbstractValue> arguments) throws SimFailedException {
+	protected AbstractValue defaultOfVirtualInvoke(MethodInsnNode min, List<? extends AbstractValue> arguments)
+			throws SimFailedException {
 		// Don't act on 'null' values
 		if (isNull())
 			throw new SimFailedException(min, "Cannot act on null reference value");
@@ -220,7 +223,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 						return unboxed(insns, retVal);
 					} else {
 						// Not a primitive
-						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal, (GetSet<Object>) resultValue, typeChecker);
+						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal,
+								(GetSet<Object>) resultValue, typeChecker);
 					}
 				}
 			}

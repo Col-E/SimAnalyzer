@@ -87,6 +87,8 @@ public abstract class AbstractValue implements Value {
 	/**
 	 * @param insn
 	 * 		Instruction to add to copy instance.
+	 * @param <A>
+	 * 		Inferred self type.
 	 *
 	 * @return Copy of current value, with additional instruction added.
 	 */
@@ -167,11 +169,19 @@ public abstract class AbstractValue implements Value {
 		return Collections.unmodifiableList(insns);
 	}
 
+	/**
+	 * @param contributing
+	 * 		Single instruction that contributes.
+	 */
 	public void addContributing(AbstractInsnNode contributing) {
 		if (!insns.contains(contributing))
 			insns.add(contributing);
 	}
 
+	/**
+	 * @param contributing
+	 * 		Instructions that contribute.
+	 */
 	public void addContributing(Collection<AbstractInsnNode> contributing) {
 		contributing = new ArrayList<>(contributing);
 		contributing.removeAll(insns);

@@ -75,13 +75,10 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		SimFrame[] simFrames = copy(frames);
 		// Assign frames their instructions
 		AbstractInsnNode[] insns = method.instructions.toArray();
-		System.out.println("Size: " + simFrames.length);
 		for (int i = 0; i < insns.length; i++) {
 			SimFrame frame = simFrames[i];
 			if (frame != null)
 				frame.setInstruction(insns[i]);
-			else
-				System.out.println("Empty: " + i);
 		}
 		// Populate recorded control flow
 		for (Flow flow : flows) {
