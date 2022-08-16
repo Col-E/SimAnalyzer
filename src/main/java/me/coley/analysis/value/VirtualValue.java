@@ -1,13 +1,10 @@
 package me.coley.analysis.value;
 
 import me.coley.analysis.TypeChecker;
-import me.coley.analysis.Unresolved;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 
 import java.util.List;
-
-import static me.coley.analysis.util.CollectUtils.*;
 
 /**
  * Value wrapper recording the type. Wrapped value is a placeholder and used to denote an unresolved value.

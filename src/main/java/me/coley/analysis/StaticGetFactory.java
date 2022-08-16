@@ -1,6 +1,7 @@
 package me.coley.analysis;
 
 import me.coley.analysis.value.AbstractValue;
+import me.coley.analysis.value.Unresolved;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.FieldInsnNode;
 

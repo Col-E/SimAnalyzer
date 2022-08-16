@@ -1,7 +1,5 @@
 package me.coley.analysis.value;
 
-import me.coley.analysis.Unresolved;
-import me.coley.analysis.util.CollectUtils;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;

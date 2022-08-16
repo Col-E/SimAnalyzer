@@ -1,4 +1,4 @@
-package me.coley.analysis;
+package me.coley.analysis.value;
 
 import org.objectweb.asm.Type;
 
