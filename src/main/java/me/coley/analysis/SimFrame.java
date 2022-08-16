@@ -127,6 +127,20 @@ public class SimFrame extends Frame<AbstractValue> {
 	}
 
 	/**
+	 * @return Frames that flow into this one.
+	 */
+	public Set<SimFrame> getFlowInputs() {
+		return flowInputs;
+	}
+
+	/**
+	 * @return Frames this flows into.
+	 */
+	public Set<SimFrame> getFlowOutputs() {
+		return flowOutputs;
+	}
+
+	/**
 	 * Called by {@link SimAnalyzer#analyze(String, MethodNode)}.
 	 *
 	 * @param instruction
