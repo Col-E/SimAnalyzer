@@ -16,14 +16,16 @@ import java.util.List;
  */
 public class TypeUtil {
 	private static final List<Integer> SORT_ORDER = new ArrayList<>();
-	/**
-	 * Constant for object type.
-	 */
 	public static final Type OBJECT_TYPE = Type.getObjectType("java/lang/Object");
-	/**
-	 * Constant for exception type.
-	 */
 	public static final Type EXCEPTION_TYPE = Type.getObjectType("java/lang/Exception");
+	public static final Type BOOLEAN_ARRAY_TYPE = Type.getType("[Z");
+	public static final Type CHAR_ARRAY_TYPE = Type.getType("[C");
+	public static final Type BYTE_ARRAY_TYPE = Type.getType("[B");
+	public static final Type SHORT_ARRAY_TYPE = Type.getType("[S");
+	public static final Type INT_ARRAY_TYPE = Type.getType("[I");
+	public static final Type FLOAT_ARRAY_TYPE = Type.getType("[F");
+	public static final Type DOUBLE_ARRAY_TYPE = Type.getType("[D");
+	public static final Type LONG_ARRAY_TYPE = Type.getType("[J");
 
 	/**
 	 * @param desc

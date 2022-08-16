@@ -558,21 +558,21 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			case NEWARRAY:
 				switch(((IntInsnNode) insn).operand) {
 					case T_BOOLEAN:
-						return newValue(add(value.getInsns(), insn), Type.getType("[Z"));
+						return newValue(add(value.getInsns(), insn), BOOLEAN_ARRAY_TYPE);
 					case T_CHAR:
-						return newValue(add(value.getInsns(), insn), Type.getType("[C"));
+						return newValue(add(value.getInsns(), insn), CHAR_ARRAY_TYPE);
 					case T_BYTE:
-						return newValue(add(value.getInsns(), insn), Type.getType("[B"));
+						return newValue(add(value.getInsns(), insn), BYTE_ARRAY_TYPE);
 					case T_SHORT:
-						return newValue(add(value.getInsns(), insn), Type.getType("[S"));
+						return newValue(add(value.getInsns(), insn), SHORT_ARRAY_TYPE);
 					case T_INT:
-						return newValue(add(value.getInsns(), insn), Type.getType("[I"));
+						return newValue(add(value.getInsns(), insn), INT_ARRAY_TYPE);
 					case T_FLOAT:
-						return newValue(add(value.getInsns(), insn), Type.getType("[F"));
+						return newValue(add(value.getInsns(), insn), FLOAT_ARRAY_TYPE);
 					case T_DOUBLE:
-						return newValue(add(value.getInsns(), insn), Type.getType("[D"));
+						return newValue(add(value.getInsns(), insn), DOUBLE_ARRAY_TYPE);
 					case T_LONG:
-						return newValue(add(value.getInsns(), insn), Type.getType("[J"));
+						return newValue(add(value.getInsns(), insn), LONG_ARRAY_TYPE);
 					default:
 						break;
 				}
@@ -617,35 +617,35 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		boolean wasAALOAD = false;
 		switch (insn.getOpcode()) {
 			case IALOAD:
-				expected1 = Type.getType("[I");
+				expected1 = INT_ARRAY_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
 			case BALOAD:
-				if (isSubTypeOf(typeChecker, value1.getType(), Type.getType("[Z"))) {
-					expected1 = Type.getType("[Z");
+				if (isSubTypeOf(typeChecker, value1.getType(), BOOLEAN_ARRAY_TYPE)) {
+					expected1 = BOOLEAN_ARRAY_TYPE;
 				} else {
-					expected1 = Type.getType("[B");
+					expected1 = BYTE_ARRAY_TYPE;
 				}
 				expected2 = Type.INT_TYPE;
 				break;
 			case CALOAD:
-				expected1 = Type.getType("[C");
+				expected1 = CHAR_ARRAY_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
 			case SALOAD:
-				expected1 = Type.getType("[S");
+				expected1 = SHORT_ARRAY_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
 			case LALOAD:
-				expected1 = Type.getType("[J");
+				expected1 = LONG_ARRAY_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
 			case FALOAD:
-				expected1 = Type.getType("[F");
+				expected1 = FLOAT_ARRAY_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
 			case DALOAD:
-				expected1 = Type.getType("[D");
+				expected1 = DOUBLE_ARRAY_TYPE;
 				expected2 = Type.INT_TYPE;
 				break;
 			case AALOAD:
@@ -848,35 +848,35 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		Type expected3;
 		switch(insn.getOpcode()) {
 			case IASTORE:
-				expected1 = Type.getType("[I");
+				expected1 = INT_ARRAY_TYPE;
 				expected3 = Type.INT_TYPE;
 				break;
 			case BASTORE:
-				if(isSubTypeOf(typeChecker, value1.getType(), Type.getType("[Z"))) {
-					expected1 = Type.getType("[Z");
+				if(isSubTypeOf(typeChecker, value1.getType(), BOOLEAN_ARRAY_TYPE)) {
+					expected1 = BOOLEAN_ARRAY_TYPE;
 				} else {
-					expected1 = Type.getType("[B");
+					expected1 = BYTE_ARRAY_TYPE;
 				}
 				expected3 = Type.INT_TYPE;
 				break;
 			case CASTORE:
-				expected1 = Type.getType("[C");
+				expected1 = CHAR_ARRAY_TYPE;
 				expected3 = Type.INT_TYPE;
 				break;
 			case SASTORE:
-				expected1 = Type.getType("[S");
+				expected1 = SHORT_ARRAY_TYPE;
 				expected3 = Type.INT_TYPE;
 				break;
 			case LASTORE:
-				expected1 = Type.getType("[J");
+				expected1 = LONG_ARRAY_TYPE;
 				expected3 = Type.LONG_TYPE;
 				break;
 			case FASTORE:
-				expected1 = Type.getType("[F");
+				expected1 = FLOAT_ARRAY_TYPE;
 				expected3 = Type.FLOAT_TYPE;
 				break;
 			case DASTORE:
-				expected1 = Type.getType("[D");
+				expected1 = DOUBLE_ARRAY_TYPE;
 				expected3 = Type.DOUBLE_TYPE;
 				break;
 			case AASTORE:
