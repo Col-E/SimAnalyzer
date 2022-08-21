@@ -28,6 +28,17 @@ public class VirtualValue extends AbstractValue {
 	 * @param insn The instruction of this value.
 	 * @param typeChecker Type checker for comparison against other types.
 	 * @param type Type to virtualize.
+	 * @param value Value to use.
+	 * @return Virtual value of type.
+	 */
+	public static VirtualValue ofVirtual(AbstractInsnNode insn, TypeChecker typeChecker, Type type, Object value) {
+		return new VirtualValue(insn, type, value, typeChecker);
+	}
+
+	/**
+	 * @param insn The instruction of this value.
+	 * @param typeChecker Type checker for comparison against other types.
+	 * @param type Type to virtualize.
 	 * @return Virtual value of type.
 	 */
 	public static VirtualValue ofVirtual(AbstractInsnNode insn, TypeChecker typeChecker, Type type) {
