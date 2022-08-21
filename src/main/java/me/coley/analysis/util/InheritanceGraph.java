@@ -43,6 +43,21 @@ public class InheritanceGraph {
 	}
 
 	/**
+	 * Adds the Java 8 and below 'rt.jar' to the inheritance graph.
+	 *
+	 * @throws IOException
+	 * 		When the RT jar cannot be read.
+	 */
+	public void addRtJar() throws IOException {
+		Path rtJar = Paths.get(System.getProperties().getProperty("java.home"), "lib", "rt.jar");
+		if (Files.isRegularFile(rtJar)) {
+			addArchive(rtJar.toFile());
+		} else {
+			throw new IOException("Could not locate 'rt.jar' in 'java.home' from relative path '/lib/rt.jar'");
+		}
+	}
+
+	/**
 	 * Add classes from the current classpath to the inheritance graph.
 	 *
 	 * @throws IOException
