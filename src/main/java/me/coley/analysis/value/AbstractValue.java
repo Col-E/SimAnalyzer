@@ -141,7 +141,7 @@ public abstract class AbstractValue implements Value {
 	 * @return {@code true} if the {@link #getValue() value} is {@code null}.
 	 */
 	public boolean isNull() {
-		return value == null;
+		return !isPrimitive() && value == null;
 	}
 
 	/**
