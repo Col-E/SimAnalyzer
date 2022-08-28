@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 
 /**
  * Some common utilities.
@@ -46,8 +48,20 @@ public class TestUtils {
 	 * @return Class node.
 	 */
 	public static ClassNode getFromName(String path) {
+		return getFromName(path, ClassReader.SKIP_FRAMES);
+	}
+
+	/**
+	 * @param path
+	 * 		Path to class in test resources.
+	 * @param readFlags
+	 * 		Flags to pass to {@link ClassReader}.
+	 *
+	 * @return Class node.
+	 */
+	public static ClassNode getFromName(String path, int readFlags) {
 		try {
-			return getFromBytes(Files.readAllBytes(getClasspathFile(path).toPath()));
+			return getFromBytes(Files.readAllBytes(getClasspathFile(path).toPath()), readFlags);
 		} catch (IOException ex) {
 			Assertions.fail(ex);
 			throw new IllegalStateException();
@@ -61,10 +75,22 @@ public class TestUtils {
 	 * @return Class node.
 	 */
 	public static ClassNode getFromBytes(byte[] clazz) {
+		return getFromBytes(clazz, ClassReader.SKIP_FRAMES);
+	}
+
+	/**
+	 * @param clazz
+	 * 		Bytecode of class.
+	 * @param readFlags
+	 * 		Flags to pass to {@link ClassReader}.
+	 *
+	 * @return Class node.
+	 */
+	public static ClassNode getFromBytes(byte[] clazz, int readFlags) {
 		try {
 			ClassReader cr = new ClassReader(clazz);
 			ClassNode node = new ClassNode();
-			cr.accept(node, ClassReader.SKIP_FRAMES);
+			cr.accept(node, readFlags);
 			return node;
 		} catch (Throwable t) {
 			Assertions.fail(t);
@@ -88,6 +114,23 @@ public class TestUtils {
 				return mn;
 		Assertions.fail("No method by name '" + name + "' in class: " + node.name);
 		throw new IllegalStateException();
+	}
+
+	/**
+	 * @param method
+	 * 		Method to parse. Requires {@link ClassReader#EXPAND_FRAMES}.
+	 *
+	 * @return Method's stack frames.
+	 */
+	public static NavigableMap<Integer, FrameNode> getStackFrames(MethodNode method) {
+		NavigableMap<Integer, FrameNode> stackFrames = new TreeMap<>();
+		for (int i = 0; i < method.instructions.size(); i++) {
+			AbstractInsnNode instruction = method.instructions.get(i);
+			if (instruction instanceof FrameNode) {
+				stackFrames.put(i, (FrameNode) instruction);
+			}
+		}
+		return stackFrames;
 	}
 
 	/**
@@ -130,6 +173,7 @@ public class TestUtils {
 		SimFrame[] frames = analyzer.analyze(owner, method);
 		if (interpreter.hasReportedProblems())
 			Assertions.fail(interpreter.getProblemInsns().values().iterator().next());
+		NavigableMap<Integer, FrameNode> stackFrames = TestUtils.getStackFrames(method);
 		return frames;
 	}
 }
