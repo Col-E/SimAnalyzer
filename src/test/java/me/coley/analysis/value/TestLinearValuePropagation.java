@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.Frame;
 
 import static org.junit.jupiter.api.Assertions.*;
 

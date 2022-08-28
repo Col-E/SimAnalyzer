@@ -16,8 +16,10 @@ public class TestJavacClasses extends TestUtils {
 			"bin/javac/PrimitiveCasting.class",
 			"bin/javac/PrimitiveMath.class",
 			"bin/javac/FindNArray.class",
+			"bin/javac/LongMath.class",
 			"bin/javac/SetItToNull.class",
 			"bin/javac/ZipIO.class",
+			"bin/javac/Pair.class",
 			"bin/javac/Type.class",
 			"bin/javac/StringEquals.class"
 	})

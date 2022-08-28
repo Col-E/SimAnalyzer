@@ -32,7 +32,7 @@ public abstract class AbstractValue implements Value {
 	protected AbstractValue(List<AbstractInsnNode> insns, Type type, final Object value) {
 		// Set contributing insns
 		if (insns == null)
-			insns = Collections.emptyList();
+			insns = new ArrayList<>();
 		this.insns = insns;
 		// Validate type must exist if value given
 		if (type == null && value != null)
@@ -112,6 +112,13 @@ public abstract class AbstractValue implements Value {
 	 * @return {@code true} if the value represents a primitive.
 	 */
 	public abstract boolean isPrimitive();
+
+	/**
+	 * @return {@code true} if the value represents a wide primitive.
+	 */
+	public boolean isWide() {
+		return isPrimitive() && getType().getSize() == 2;
+	}
 
 	/**
 	 * @return {@code true} if the wrapped type is a reference.
