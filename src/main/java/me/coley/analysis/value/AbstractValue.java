@@ -236,7 +236,7 @@ public abstract class AbstractValue implements Value {
 	@Override
 	public String toString() {
 		if (this == UninitializedValue.UNINITIALIZED_VALUE)
-			return "<UNINITIALIZED>";
+			return "<UNINIT>";
 		else if (this instanceof NullConstantValue)
 			return "<NULL>";
 		else if (this instanceof ReturnAddressValue)
