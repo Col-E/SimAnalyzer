@@ -1,4 +1,4 @@
-# SimAnalyzer [![Build Status](https://cloud.drone.io/api/badges/Col-E/SimAnalyzer/status.svg)](https://cloud.drone.io/Col-E/SimAnalyzer) [![](https://jitpack.io/v/Col-E/SimAnalyzer.svg)](https://jitpack.io/#Col-E/SimAnalyzer)
+# SimAnalyzer [![](https://jitpack.io/v/Col-E/SimAnalyzer.svg)](https://jitpack.io/#Col-E/SimAnalyzer) ![](https://github.com/Col-E/SimAnalyzer/actions/workflows/display_test_results.yml/badge.svg)
 
 SimAnalyzer is an analyzer that computes the values of primitives and basic objects where possible.
 Additional features like dead code detection are also available. 
