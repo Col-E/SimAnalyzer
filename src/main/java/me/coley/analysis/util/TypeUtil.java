@@ -158,12 +158,14 @@ public class TypeUtil {
 		if (bothArrays) {
 			// TODO: With usage cases of "isSubTypeOf(...)" should we just check the element types are equals?
 			//  - Or should sub-typing with array element types be used like it currently is?
-			// Dimensions must match, unless both are Object
-			if (child.getDimensions() != parent.getDimensions() &&
-					(!child.getElementType().equals(OBJECT_TYPE) || !parent.getElementType().equals(OBJECT_TYPE)))
-				return false;
-			child = child.getElementType();
-			parent = parent.getElementType();
+			if (child.getDimensions() != parent.getDimensions()) {
+				int minDims = Math.min(child.getDimensions(), parent.getDimensions());
+				// shitty hack
+				child = Type.getType(child.getDescriptor().substring(minDims));
+				parent = Type.getType(parent.getDescriptor().substring(minDims));
+				// dimensions dont match and parent sort isn't Object, this won't work
+				if (!parent.equals(TypeUtil.OBJECT_TYPE)) return false;
+			}
 		}
 		// Null check in case
 		if (parent == null)
