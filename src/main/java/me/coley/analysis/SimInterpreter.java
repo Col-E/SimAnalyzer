@@ -18,7 +18,6 @@ import me.coley.analysis.value.simulated.ReflectionSimulatedValue;
 import me.coley.analysis.value.simulated.StringSimulatedValue;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
@@ -67,9 +66,19 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	/**
 	 * Create an interpreter.
+	 *
+	 * @param api
+	 * 		ASM API version.
+	 */
+	public SimInterpreter(int api) {
+		super(api);
+	}
+
+	/**
+	 * Create an interpreter.
 	 */
 	public SimInterpreter() {
-		super(Opcodes.ASM8);
+		super(ASM9);
 	}
 
 	// TODO: Make all of these LoggedAnalyzerException where applicable
@@ -77,7 +86,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	/**
 	 * Disabled by default, this allows properly tracking the state of things like {@link StringSimulatedValue}
 	 *
-	 * @param useReflectionSimulation {@code true} to simulate certain calls with reflection.
+	 * @param useReflectionSimulation
+	 *        {@code true} to simulate certain calls with reflection.
 	 */
 	public void setUseReflectionSimulation(boolean useReflectionSimulation) {
 		this.useReflectionSimulation = useReflectionSimulation;
