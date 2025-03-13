@@ -50,7 +50,6 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 		this.interpreter.setStaticGetFactory(createStaticGetFactory());
 		this.interpreter.setParameterFactory(createParameterFactory());
 		this.interpreter.setTypeResolver(createTypeResolver());
-		this.interpreter.setTypeChecker(createTypeChecker());
 	}
 
 	/**
@@ -141,7 +140,7 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	 * @return Exception factory for interpreter to use.
 	 */
 	protected ResolvableExceptionFactory createExceptionFactory() {
-		return new ResolvableExceptionFactory(createTypeChecker(), getBlockHandler());
+		return new ResolvableExceptionFactory(createTypeResolver(), getBlockHandler());
 	}
 
 	/**
@@ -172,12 +171,26 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 	}
 
 	/**
-	 * Provides a basic equality check by default.
+	 * Provides a super basic type resolving by default. It is <b>highly recommended</b> that you override this and
+	 * provide access to some inheritance graph to support non-runtime types.
 	 *
 	 * @return Type resolver for interpreter to use.
 	 */
 	protected TypeResolver createTypeResolver() {
 		return new TypeResolver() {
+			@Override
+			public boolean isAssignableFrom(Type first, Type second) {
+				try {
+					Class<?> clsParent = Class.forName(first.getClassName(), false,
+							ClassLoader.getSystemClassLoader());
+					Class<?> clsChild = Class.forName(second.getClassName(), false,
+							ClassLoader.getSystemClassLoader());
+					return clsParent.isAssignableFrom(clsChild);
+				} catch (Throwable t) {
+					return false;
+				}
+			}
+
 			@Override
 			public Type common(Type type1, Type type2) {
 				return type1.equals(type2) ? type1 : TypeUtil.OBJECT_TYPE;
@@ -186,28 +199,6 @@ public class SimAnalyzer extends Analyzer<AbstractValue> {
 			@Override
 			public Type commonException(Type type1, Type type2) {
 				return type1.equals(type2) ? type1 : TypeUtil.EXCEPTION_TYPE;
-			}
-		};
-	}
-
-	/**
-	 * Provides a {@link Class#isAssignableFrom(Class)} comparison by default.
-	 * <br>
-	 * This is in a lot of cases and is <b>highly recommended</b> that you override this and
-	 * provide access to some inheritance graph to support non-runtime types.
-	 *
-	 * @return Type checker for interpreter to use.
-	 */
-	protected TypeChecker createTypeChecker() {
-		return (parent, child) -> {
-			try {
-				Class<?> clsParent = Class.forName(parent.getClassName(), false,
-						ClassLoader.getSystemClassLoader());
-				Class<?> clsChild = Class.forName(child.getClassName(), false,
-						ClassLoader.getSystemClassLoader());
-				return clsParent.isAssignableFrom(clsChild);
-			} catch (Throwable t) {
-				return false;
 			}
 		};
 	}

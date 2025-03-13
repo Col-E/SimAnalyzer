@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -9,89 +9,61 @@ on:
       - master
 
 permissions:
-  checks: write
   contents: write
-  pull-requests: write
 
 jobs:
-  build:
+  test:
+    name: Run test suite
     strategy:
       fail-fast: false
       matrix:
-        # Alternative for testing on multiple platforms. Ubuntu runs the quickest with the latest JVM.
-        #   os: [ubuntu-latest, windows-latest, macos-latest]
-        #   java-version: [11, 17]
         os: [ ubuntu-latest ]
-        java-version: [ 17 ]
-    runs-on: ${{ matrix.os }}
+        java-version: [ 21 ]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # Required depth for JReleaser
-      - name: Setup Java JDK
+      - name: Setup JDK
         uses: actions/setup-java@v3
         with:
-          distribution: adopt-hotspot
-          java-version: ${{ matrix.java-version }}
-      
-      # Run tests & build artifact
-      - name: Run tests & build release
-        run: ./mvnw package
-      
-      # Upload test results
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v2.3.1
+          distribution: temurin
+          java-version: 21
+          check-latest: true
+      # The project version extract NEEDS to have the maven wrapper already downloaded.
+      # So we have a dummy step here just to initialize it.
+      - name: Download Maven wrapper
+        run: ./mvnw --version
+      - name: Run tests
+        run: ./mvnw test
+      - name: Upload test results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: Event File
+          name: Test-Artifacts-${{ matrix.java-version }}
           retention-days: 21
           path: |
             **/TEST-*
             **/hs_err_pid*
 
-      # Set JReleaser version to the project version: "var_to_set=$(command_to_run)" >> sink
-      #  - For maven:  echo "JRELEASER_PROJECT_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-      #  - For gradle: echo "JRELEASER_PROJECT_VERSION=$(./gradlew properties | grep -Po '(?<=version: ).*')" >> $GITHUB_ENV
-      - name: Extract project version to environment variable
-        run: echo "JRELEASER_PROJECT_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
-
-      # Check if a tag exists that matches the current project version.
-      # Write the existence state to the step output 'tagExists'.
-      - name: 'Check: package version has corrosponding git tag'
-        id: tagged
-        shell: bash
-        run: git show-ref --tags --verify --quiet -- "refs/tags/${{ env.JRELEASER_PROJECT_VERSION }}" && echo "tagExists=1" >> $GITHUB_OUTPUT || echo "tagExists=0" >> $GITHUB_OUTPUT
-      
-      # Make release with JReleaser, only running when the project version does not exist as a tag on the repository.
-      - name: Release
-        if: steps.tagged.outputs.tagExists == 0
-        uses: jreleaser/release-action@v2
-        with:
-          arguments: full-release
-        env:
-          JRELEASER_PROJECT_VERSION: ${{ env.JRELEASER_PROJECT_VERSION }}
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Upload JRelease debug log
-      - name: JReleaser output
-        if: steps.tagged.outputs.tagExists == 0
-        uses: actions/upload-artifact@v3
-        with:
-          name: jreleaser-release
-          path: |
-            out/jreleaser/trace.log
-            out/jreleaser/output.properties
-
-  # Taken from: https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#support-fork-repositories-and-dependabot-branches
-  #  - Required for test-results to be published
-  event_file:
-    name: "Event File"
+  # Publishes the test results of 'test'
+  publish-test-results:
+    name: Publish tests results
+    needs: test
+    if: always()
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
     steps:
-      - name: Upload
-        uses: actions/upload-artifact@v2
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: Event File
-          path: ${{ github.event_path }}
+          path: artifacts
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Unit Test results
+          files: |
+            **/TEST-*
+            **/hs_err_pid*

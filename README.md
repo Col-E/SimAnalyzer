@@ -53,9 +53,17 @@ implementation 'com.github.Col-E:SimAnalyzer:VERSION'
 ### Configure SimAnalyzer
 
 ```java
+SimInterpreter interpreter = new SimInterpreter();
+
+// You can enable some whitelisted reflection-based state tracking for types like:
+// - String
+// - StringBuffer
+// - StringBuilder
+interpreter.setUseReflectionSimulation(true);
+
 // Override SimAnalyzer's provider methods to add additional functionality or
 // to enhance existing function with outside information provided by you
-SimAnalzer analyzer = new SimAnalyzer(new SimInterpreter()) {
+SimAnalzer analyzer = new SimAnalyzer(interpreter) {
     @Override
     protected ResolvableExceptionFactory createExceptionFactory() {
         // Allow overriding error-resolving logic
@@ -73,17 +81,11 @@ SimAnalzer analyzer = new SimAnalyzer(new SimInterpreter()) {
         // Allow managing the values of static invoke calls
         return super.createStaticGetFactory();
     }
-
-    @Override
-    protected TypeChecker createTypeChecker() {
-        // Allow better type checking, default uses system classpath
-        return super.createTypeChecker();
-    }
     
     @Override
     protected TypeResolver createTypeResolver() {
         // Allow common type resolution, defaults to only merging exactly equal types
-        return super.createTypeChecker();
+        return super.createTypeResolver();
     }
 
      @Override
@@ -94,11 +96,12 @@ SimAnalzer analyzer = new SimAnalyzer(new SimInterpreter()) {
 };
 // Determine if we want to skip dead-code blocks
 analyzer.setSkipDeadCodeBlocks(true / false);
+
 // Determine if we want to throw unresolved errors, or keep them silent
 analyzer.setThrowUnresolvedAnalyzerErrors(true / false);
 ```
 
-To easily create a `TypeChecker` implementation you can use the built-in hierarchy graph tool `InheritanceGraph`
+To easily create a `TypeResolver` implementation you can use the built-in hierarchy graph tool `InheritanceGraph`
 ```java
 // Setup the graph
 InheritanceGraph graph = new InheritanceGraph();
@@ -109,36 +112,32 @@ graph.addClass(Files.readAllBytes(Paths.get("example.class"))); // add bytecode
 graph.addArchive(new File("example.jar")); // add jar or jmod (java module)
 graph.addDirectory(new File("directory/with/classes-or-jars")); // add directory (recursive)
 graph.add("child", Arrays.asList("parent1", "parent2")); // manually specify child/parent relations
+
 // Use the graph
 @Override
-protected TypeChecker createTypeChecker() {
-	return (parent, child) -> graph.getAllParents(child.getInternalName())
-			.contains(parent.getInternalName());
-}
-```
-
-The same can be done for a `TypeResolver`:
-```java
-// Using the same "graph" object from above
-@Override
 protected TypeResolver createTypeResolver() {
-    return new TypeResolver() {
-        @Override
-        public Type common(Type type1, Type type2) {
-            String common = graph.getCommon(type1.getInternalName(), type2.getInternalName());
-            if (common != null)
-                return Type.getObjectType(common);
-            return TypeUtil.OBJECT_TYPE;
-        }
+  return new TypeResolver() {
+    @Override
+    public boolean isAssignableFrom(Type first, Type second) {
+      return first.equals(common(first, second));
+    }
 
-        @Override
-        public Type commonException(Type type1, Type type2) {
-            String common = graph.getCommon(type1.getInternalName(), type2.getInternalName());
-            if (common != null)
-                return Type.getObjectType(common);
-            return TypeUtil.EXCEPTION_TYPE;
-        }
-    };
+    @Override
+    public Type common(Type type1, Type type2) {
+      String common = graph.getCommon(type1.getInternalName(), type2.getInternalName());
+      if (common != null)
+        return Type.getObjectType(common);
+      return TypeUtil.OBJECT_TYPE;
+    }
+
+    @Override
+    public Type commonException(Type type1, Type type2) {
+      String common = graph.getCommon(type1.getInternalName(), type2.getInternalName());
+      if (common != null)
+        return Type.getObjectType(common);
+      return TypeUtil.EXCEPTION_TYPE;
+    }
+  };
 }
 ```
 

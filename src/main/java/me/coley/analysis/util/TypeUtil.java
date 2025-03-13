@@ -1,6 +1,6 @@
 package me.coley.analysis.util;
 
-import me.coley.analysis.TypeChecker;
+import me.coley.analysis.TypeResolver;
 import me.coley.analysis.value.AbstractValue;
 import me.coley.analysis.value.NullConstantValue;
 import me.coley.analysis.value.UninitializedValue;
@@ -29,14 +29,15 @@ public class TypeUtil {
 
 	/**
 	 * @param desc
-	 *            Type to check.
+	 * 		Type to check.
+	 *
 	 * @return Type denotes a primitive type.
 	 */
 	public static boolean isPrimitiveDesc(String desc) {
-		if(desc.length() != 1) {
+		if (desc.length() != 1) {
 			return false;
 		}
-		switch(desc.charAt(0)) {
+		switch (desc.charAt(0)) {
 			case 'Z':
 			case 'C':
 			case 'B':
@@ -65,7 +66,7 @@ public class TypeUtil {
 		int i1 = getPromotionIndex(a.getSort());
 		int i2 = getPromotionIndex(b.getSort());
 		int max = Math.max(i1, i2);
-		if(max <= Type.DOUBLE)
+		if (max <= Type.DOUBLE)
 			return max == i1 ? a : b;
 		throw new IllegalStateException("Cannot do math on non-primitive types: " +
 				a.getDescriptor() + " & " + b.getDescriptor());
@@ -78,7 +79,7 @@ public class TypeUtil {
 	 * @return Size of type.
 	 */
 	public static int sortToSize(int sort) {
-		switch(sort) {
+		switch (sort) {
 			case Type.LONG:
 			case Type.DOUBLE:
 				return 2;
@@ -98,10 +99,10 @@ public class TypeUtil {
 	}
 
 	/**
-	 * Helper call for {@link #isSubTypeOfOrNull(TypeChecker, AbstractValue, Type)}.
+	 * Helper call for {@link #isSubTypeOfOrNull(TypeResolver, AbstractValue, Type)}.
 	 *
-	 * @param typeChecker
-	 * 		Type checker for comparison against other types.
+	 * @param typeResolver
+	 * 		Type resolver for comparison against other types.
 	 * @param childValue
 	 * 		Some value that has a type.
 	 * @param parentValue
@@ -110,13 +111,13 @@ public class TypeUtil {
 	 * @return {@code true} when the child value's type is a subtype of the parent value's type,
 	 * or the child value is {@code null}.
 	 */
-	public static boolean isSubTypeOfOrNull(TypeChecker typeChecker, AbstractValue childValue, AbstractValue parentValue) {
-		return isSubTypeOfOrNull(typeChecker, childValue, parentValue.getType());
+	public static boolean isSubTypeOfOrNull(TypeResolver typeResolver, AbstractValue childValue, AbstractValue parentValue) {
+		return isSubTypeOfOrNull(typeResolver, childValue, parentValue.getType());
 	}
 
 	/**
-	 * @param typeChecker
-	 *      Type checker for comparison against other types.
+	 * @param typeResolver
+	 * 		Type resolver for comparison against other types.
 	 * @param childValue
 	 * 		Some value that has a type.
 	 * @param parent
@@ -125,7 +126,7 @@ public class TypeUtil {
 	 * @return {@code true} when the child value's type is a subtype of the parent,
 	 * or the child value is {@code null}.
 	 */
-	public static boolean isSubTypeOfOrNull(TypeChecker typeChecker, AbstractValue childValue, Type parent) {
+	public static boolean isSubTypeOfOrNull(TypeResolver typeResolver, AbstractValue childValue, Type parent) {
 		// TODO: This should not occur
 		if (childValue == null)
 			return false;
@@ -137,16 +138,20 @@ public class TypeUtil {
 		if (childValue == UninitializedValue.UNINITIALIZED_VALUE)
 			return false;
 		// Fallback
-		return isSubTypeOf(typeChecker, childValue.getType(), parent);
+		return isSubTypeOf(typeResolver, childValue.getType(), parent);
 	}
 
 	/**
-	 * @param typeChecker Type checker for comparison against other types.
-	 * @param child Some type.
-	 * @param parent Some other type.
+	 * @param typeResolver
+	 * 		Type resolver for comparison against other types.
+	 * @param child
+	 * 		Some type.
+	 * @param parent
+	 * 		Some other type.
+	 *
 	 * @return {@code true} when the child is a subtype of the parent.
 	 */
-	public static boolean isSubTypeOf(TypeChecker typeChecker, Type child, Type parent) {
+	public static boolean isSubTypeOf(TypeResolver typeResolver, Type child, Type parent) {
 		// Can't handle null type
 		if (child == null)
 			return false;
@@ -190,8 +195,8 @@ public class TypeUtil {
 			return true;
 		// Check if types are compatible
 		if (child.getSort() == parent.getSort()) {
-			AbstractValue host = AbstractValue.ofDefault(null, typeChecker, parent);
-			return host != null && host.canMerge(AbstractValue.ofDefault(null, typeChecker, child));
+			AbstractValue host = AbstractValue.ofDefault(null, typeResolver, parent);
+			return host != null && host.canMerge(AbstractValue.ofDefault(null, typeResolver, child));
 		}
 		return false;
 	}

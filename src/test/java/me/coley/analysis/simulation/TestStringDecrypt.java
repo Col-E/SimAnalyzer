@@ -34,7 +34,7 @@ public class TestStringDecrypt extends TestUtils {
 			protected ParameterFactory createParameterFactory() {
 				return (isInstanceMethod, local, type) -> {
 					if (local == 0) {
-						return StringSimulatedValue.of(Collections.emptyList(), createTypeChecker(), text);
+						return StringSimulatedValue.of(Collections.emptyList(), createTypeResolver(), text);
 					} else if (local == 1) {
 						return PrimitiveValue.ofInt(Collections.emptyList(), key);
 					}

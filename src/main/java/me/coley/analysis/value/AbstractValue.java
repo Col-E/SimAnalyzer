@@ -1,6 +1,6 @@
 package me.coley.analysis.value;
 
-import me.coley.analysis.TypeChecker;
+import me.coley.analysis.TypeResolver;
 import me.coley.analysis.util.CollectUtils;
 import me.coley.analysis.util.TypeUtil;
 import org.objectweb.asm.Opcodes;
@@ -49,14 +49,14 @@ public abstract class AbstractValue implements Value {
 	/**
 	 * @param insn
 	 * 		The instruction of the value.
-	 * @param typeChecker
-	 * 		Type checker for comparison against other types.
+	 * @param typeResolver
+	 * 		Type resolver for comparison against other types.
 	 * @param type
 	 * 		Type.
 	 *
 	 * @return Type value.
 	 */
-	public static AbstractValue ofDefault(AbstractInsnNode insn, TypeChecker typeChecker, Type type) {
+	public static AbstractValue ofDefault(AbstractInsnNode insn, TypeResolver typeResolver, Type type) {
 		if (type == null)
 			return UninitializedValue.UNINITIALIZED_VALUE;
 		switch (type.getSort()) {
@@ -78,7 +78,7 @@ public abstract class AbstractValue implements Value {
 			case Type.OBJECT:
 				if (type.equals(NullConstantValue.NULL_VALUE_TYPE))
 					return NullConstantValue.newNull(insn);
-				return new VirtualValue(insn, type, null, typeChecker);
+				return new VirtualValue(insn, type, null, typeResolver);
 			default:
 				throw new IllegalStateException("Unsupported type: " + type);
 		}

@@ -1,6 +1,6 @@
 package me.coley.analysis.value.simulated;
 
-import me.coley.analysis.TypeChecker;
+import me.coley.analysis.TypeResolver;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.util.GetSet;
 import me.coley.analysis.util.TypeUtil;
@@ -14,7 +14,12 @@ import org.objectweb.asm.tree.MethodInsnNode;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -29,26 +34,26 @@ import static me.coley.analysis.util.CollectUtils.*;
  * @author Matt Coley
  */
 public abstract class AbstractSimulatedValue<T> extends VirtualValue {
-	private static final Map<String, BiFunction<List<AbstractInsnNode>, TypeChecker, AbstractSimulatedValue<?>>>
+	private static final Map<String, BiFunction<List<AbstractInsnNode>, TypeResolver, AbstractSimulatedValue<?>>>
 			TYPE_PRODUCERS = new HashMap<>();
 	protected static final String[][] BLACKLISTED_METHODS = {
-		{"wait", "()V"},
-		{"wait", "(J)V"},
-		{"wait", "(JI)V"},
-		{"notify", "()V"},
-		{"notifyAll", "()V"},
-		{"intern", "()Ljava/lang/String;"}
+			{"wait", "()V"},
+			{"wait", "(J)V"},
+			{"wait", "(JI)V"},
+			{"notify", "()V"},
+			{"notifyAll", "()V"},
+			{"intern", "()Ljava/lang/String;"}
 	};
 	protected static final Set<String> WHITELISTED_CLASSES = new HashSet<>(Arrays.asList(
-		"java/lang/Long",
-		"java/lang/Integer",
-		"java/lang/Short",
-		"java/lang/Character",
-		"java/lang/Byte",
-		"java/lang/Boolean",
-		"java/lang/Float",
-		"java/lang/Double",
-		"java/lang/Math"
+			"java/lang/Long",
+			"java/lang/Integer",
+			"java/lang/Short",
+			"java/lang/Character",
+			"java/lang/Byte",
+			"java/lang/Boolean",
+			"java/lang/Float",
+			"java/lang/Double",
+			"java/lang/Math"
 	));
 
 	/**
@@ -59,15 +64,15 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 */
 	protected final GetSet<T> resultValue;
 
-	protected AbstractSimulatedValue(List<AbstractInsnNode> insns, Type type, T value, TypeChecker typeChecker) {
+	protected AbstractSimulatedValue(List<AbstractInsnNode> insns, Type type, T value, TypeResolver typeResolver) {
 		// Called to create a new chain of simulated values.
-		this(insns, type, value, new GetSet<>(value), typeChecker);
+		this(insns, type, value, new GetSet<>(value), typeResolver);
 	}
 
 	protected AbstractSimulatedValue(List<AbstractInsnNode> insns, Type type, T value,
-									 GetSet<T> resultValue, TypeChecker typeChecker) {
+	                                 GetSet<T> resultValue, TypeResolver typeResolver) {
 		// Called to add on to an existing chain of simulated values.
-		super(insns, type, copyValue(value), typeChecker);
+		super(insns, type, copyValue(value), typeResolver);
 		this.resultValue = resultValue;
 	}
 
@@ -162,8 +167,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 */
 	@SuppressWarnings("unchecked")
 	protected AbstractValue invokeVirtual(MethodInsnNode min, String name,
-										  Type desc, List<? extends AbstractValue> arguments,
-										  Object invokeHost) throws ReflectiveOperationException {
+	                                      Type desc, List<? extends AbstractValue> arguments,
+	                                      Object invokeHost) throws ReflectiveOperationException {
 		// Check against constructors
 		Type[] argTypes = desc.getArgumentTypes();
 		if (name.equals("<init>")) {
@@ -182,7 +187,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 					c.setAccessible(true);
 					Object retVal = c.newInstance(argValues);
 					return new ReflectionSimulatedValue(insns,
-							Type.getType(retVal.getClass()), retVal, typeChecker);
+							Type.getType(retVal.getClass()), retVal, typeResolver);
 				}
 			}
 		}
@@ -190,7 +195,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 		for (String[] def : BLACKLISTED_METHODS)
 			if (def[0].equals(name) && def[1].equals(desc.getDescriptor()))
 				return new ReflectionSimulatedValue(insns,
-						getType(), getValue(), typeChecker);
+						getType(), getValue(), typeResolver);
 		// Check against normal methods
 		Type retType = desc.getReturnType();
 		for (Method mm : invokeHost.getClass().getMethods()) {
@@ -224,7 +229,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 					} else {
 						// Not a primitive
 						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal,
-								(GetSet<Object>) resultValue, typeChecker);
+								(GetSet<Object>) resultValue, typeResolver);
 					}
 				}
 			}
@@ -243,8 +248,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 * 		Method type descriptor.
 	 * @param arguments
 	 * 		Argument values
-	 * @param typeChecker
-	 * 		Type checker for comparison against other types.
+	 * @param typeResolver
+	 * 		Type resolver for comparison against other types.
 	 *
 	 * @return New value holder containing the new value from invoking the method.
 	 *
@@ -252,7 +257,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 * 		When the target method could not be invoked.
 	 */
 	protected static AbstractValue invokeStatic(MethodInsnNode min, String owner, String name, Type desc,
-												List<? extends AbstractValue> arguments, TypeChecker typeChecker)
+	                                            List<? extends AbstractValue> arguments, TypeResolver typeResolver)
 			throws ReflectiveOperationException {
 		Class<?> cls = Class.forName(owner.replace('/', '.'));
 		Type retType = desc.getReturnType();
@@ -286,7 +291,7 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 						return unboxed(insns, retVal);
 					} else {
 						// Not a primitive
-						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal, typeChecker);
+						return new ReflectionSimulatedValue(insns, Type.getType(retVal.getClass()), retVal, typeResolver);
 					}
 				}
 			}
@@ -357,8 +362,8 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 *
 	 * @param insns
 	 * 		Instructions of value.
-	 * @param typeChecker
-	 * 		Type checker for comparison against other types.
+	 * @param typeResolver
+	 * 		Type resolver for comparison against other types.
 	 * @param type
 	 * 		Some type.
 	 * @param <T>
@@ -367,15 +372,15 @@ public abstract class AbstractSimulatedValue<T> extends VirtualValue {
 	 * @return New instance of type.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> AbstractSimulatedValue<T> initialize(List<AbstractInsnNode> insns, TypeChecker typeChecker, Type type) {
-		return (AbstractSimulatedValue<T>) TYPE_PRODUCERS.get(type.getInternalName()).apply(insns, typeChecker);
+	public static <T> AbstractSimulatedValue<T> initialize(List<AbstractInsnNode> insns, TypeResolver typeResolver, Type type) {
+		return (AbstractSimulatedValue<T>) TYPE_PRODUCERS.get(type.getInternalName()).apply(insns, typeResolver);
 	}
 
 	static {
-		TYPE_PRODUCERS.put("java/lang/StringBuilder", (insns, typeChecker) ->
-				new ReflectionSimulatedValue(insns, Type.getObjectType("java/lang/StringBuilder"), new StringBuilder(), typeChecker));
-		TYPE_PRODUCERS.put("java/lang/StringBuffer", (insns, typeChecker) ->
-				new ReflectionSimulatedValue(insns, Type.getObjectType("java/lang/StringBuffer"), new StringBuffer(), typeChecker));
-		TYPE_PRODUCERS.put("java/lang/String", (insns, typeChecker) -> StringSimulatedValue.of(insns, typeChecker, ""));
+		TYPE_PRODUCERS.put("java/lang/StringBuilder", (insns, typeResolver) ->
+				new ReflectionSimulatedValue(insns, Type.getObjectType("java/lang/StringBuilder"), new StringBuilder(), typeResolver));
+		TYPE_PRODUCERS.put("java/lang/StringBuffer", (insns, typeResolver) ->
+				new ReflectionSimulatedValue(insns, Type.getObjectType("java/lang/StringBuffer"), new StringBuffer(), typeResolver));
+		TYPE_PRODUCERS.put("java/lang/String", (insns, typeResolver) -> StringSimulatedValue.of(insns, typeResolver, ""));
 	}
 }

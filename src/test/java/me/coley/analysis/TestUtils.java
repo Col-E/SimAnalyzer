@@ -169,11 +169,11 @@ public class TestUtils {
 	 */
 	public static SimFrame[] getFrames(String owner, MethodNode method) throws AnalyzerException {
 		SimInterpreter interpreter = new SimInterpreter();
+		interpreter.setUseReflectionSimulation(true);
 		SimAnalyzer analyzer = new SimAnalyzer(interpreter);
 		SimFrame[] frames = analyzer.analyze(owner, method);
 		if (interpreter.hasReportedProblems())
 			Assertions.fail(interpreter.getProblemInsns().values().iterator().next());
-		NavigableMap<Integer, FrameNode> stackFrames = TestUtils.getStackFrames(method);
 		return frames;
 	}
 }

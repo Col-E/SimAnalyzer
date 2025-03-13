@@ -9,6 +9,19 @@ import org.objectweb.asm.Type;
  */
 public interface TypeResolver {
 	/**
+	 * Given {@code List.class.isAssignableFrom(ArrayList.class)} the {@code first} parameter would be
+	 * {@code java/util/List} and the {@code second} parameter would be {@code java/util/ArrayList}.
+	 *
+	 * @param first
+	 * 		Assumed super-class or interface type.
+	 * @param second
+	 * 		Assumed child class which extends the super-class or implements the interface type.
+	 *
+	 * @return {@code true} when {@code first.isAssignableFrom(second)}.
+	 */
+	boolean isAssignableFrom(Type first, Type second);
+
+	/**
 	 * @param type1
 	 * 		Some type.
 	 * @param type2

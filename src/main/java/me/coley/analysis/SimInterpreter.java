@@ -5,7 +5,14 @@ import me.coley.analysis.exception.ResolvableExceptionFactory;
 import me.coley.analysis.exception.SimFailedException;
 import me.coley.analysis.exception.TypeMismatchKind;
 import me.coley.analysis.util.FlowUtil;
-import me.coley.analysis.value.*;
+import me.coley.analysis.value.AbstractValue;
+import me.coley.analysis.value.ExceptionValue;
+import me.coley.analysis.value.NullConstantValue;
+import me.coley.analysis.value.PrimitiveValue;
+import me.coley.analysis.value.ReturnAddressValue;
+import me.coley.analysis.value.UninitializedValue;
+import me.coley.analysis.value.Unresolved;
+import me.coley.analysis.value.VirtualValue;
 import me.coley.analysis.value.simulated.AbstractSimulatedValue;
 import me.coley.analysis.value.simulated.ReflectionSimulatedValue;
 import me.coley.analysis.value.simulated.StringSimulatedValue;
@@ -13,8 +20,23 @@ import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.IincInsnNode;
+import org.objectweb.asm.tree.IntInsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.MultiANewArrayInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.BasicValue;
+import org.objectweb.asm.tree.analysis.BasicVerifier;
+import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.Interpreter;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,9 +61,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	private StaticInvokeFactory staticInvokeFactory;
 	private StaticGetFactory staticGetFactory;
 	private ParameterFactory parameterFactory;
-	private TypeChecker typeChecker;
 	private TypeResolver typeResolver;
 	private SimAnalyzer analyzer;
+	private boolean useReflectionSimulation;
 
 	/**
 	 * Create an interpreter.
@@ -51,6 +73,15 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	// TODO: Make all of these LoggedAnalyzerException where applicable
+
+	/**
+	 * Disabled by default, this allows properly tracking the state of things like {@link StringSimulatedValue}
+	 *
+	 * @param useReflectionSimulation {@code true} to simulate certain calls with reflection.
+	 */
+	public void setUseReflectionSimulation(boolean useReflectionSimulation) {
+		this.useReflectionSimulation = useReflectionSimulation;
+	}
 
 	/**
 	 * Called to reset state values between usages.
@@ -148,21 +179,6 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	/**
-	 * @return Type checker for parent/child relation validation.
-	 */
-	public TypeChecker getTypeChecker() {
-		return typeChecker;
-	}
-
-	/**
-	 * @param typeChecker
-	 * 		Type checker for parent/child relation validation.
-	 */
-	public void setTypeChecker(TypeChecker typeChecker) {
-		this.typeChecker = typeChecker;
-	}
-
-	/**
 	 * @return Type resolver for common type analysis.
 	 */
 	public TypeResolver getTypeResolver() {
@@ -188,7 +204,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		if (value.isPrimitive() && value.isValueResolved()) {
 			int p1 = ((PrimitiveValue) value).getIntValue();
 			boolean gotoDestination = false;
-			switch(insn.getOpcode()) {
+			switch (insn.getOpcode()) {
 				case IFEQ:
 					gotoDestination = p1 == 0;
 					break;
@@ -219,7 +235,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			int p1 = ((PrimitiveValue) value1).getIntValue();
 			int p2 = ((PrimitiveValue) value2).getIntValue();
 			boolean gotoDestination = false;
-			switch(insn.getOpcode()) {
+			switch (insn.getOpcode()) {
 				case IF_ICMPEQ:
 					gotoDestination = p1 == p2;
 					break;
@@ -250,8 +266,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	private AbstractValue newValueOrVirtualized(AbstractInsnNode insn, Type type) {
-		if (AbstractSimulatedValue.supported(type))
-			return AbstractSimulatedValue.initialize(Collections.singletonList(insn), typeChecker, type);
+		if (useReflectionSimulation && AbstractSimulatedValue.supported(type))
+			return AbstractSimulatedValue.initialize(Collections.singletonList(insn), typeResolver, type);
 		return newValue(insn, type);
 	}
 
@@ -262,7 +278,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return null;
 		else if (type.getSort() <= Type.DOUBLE)
 			return new PrimitiveValue(insn, type);
-		return VirtualValue.ofVirtual(insn, typeChecker, type);
+		return VirtualValue.ofVirtual(insn, typeResolver, type);
 	}
 
 	private AbstractValue newValue(List<AbstractInsnNode> insns, Type type) {
@@ -272,7 +288,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return null;
 		else if (type.getSort() <= Type.DOUBLE)
 			return new PrimitiveValue(insns, type, null);
-		return VirtualValue.ofVirtual(insns, typeChecker, type);
+		return VirtualValue.ofVirtual(insns, typeResolver, type);
 	}
 
 	@Override
@@ -305,8 +321,8 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public AbstractValue newExceptionValue(TryCatchBlockNode tryCatch,
-										   Frame<AbstractValue> handlerFrame, Type exceptionType) {
-		return ExceptionValue.ofHandledException(tryCatch.handler, typeChecker, exceptionType);
+	                                       Frame<AbstractValue> handlerFrame, Type exceptionType) {
+		return ExceptionValue.ofHandledException(tryCatch.handler, typeResolver, exceptionType);
 	}
 
 	@Override
@@ -356,12 +372,12 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				} else if (value instanceof Double) {
 					return PrimitiveValue.ofDouble(insn, (double) value);
 				} else if (value instanceof String) {
-					return StringSimulatedValue.of(insn, typeChecker, (String) value);
+					return StringSimulatedValue.of(insn, typeResolver, (String) value);
 				} else if (value instanceof Type) {
-					Type type =  (Type) value;
+					Type type = (Type) value;
 					int sort = type.getSort();
 					if (sort == Type.OBJECT || sort == Type.ARRAY) {
-						return VirtualValue.ofClass(insn, typeChecker, type);
+						return VirtualValue.ofClass(insn, typeResolver, type);
 					} else if (sort == Type.METHOD) {
 						return newValue(insn, Type.getObjectType("java/lang/invoke/MethodType"));
 					} else {
@@ -395,7 +411,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// Fetch type from instruction
 		Type insnType = null;
 		boolean load = false;
-		switch(insn.getOpcode()) {
+		switch (insn.getOpcode()) {
 			case ILOAD:
 				load = true;
 			case ISTORE:
@@ -433,21 +449,21 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		}
 		// Very simple type verification
 		Type argType = value.getType();
-		if(insnType != null && argType != null) {
+		if (insnType != null && argType != null) {
 			// Check if we are trying to store a wider value into a narrower type
 			if (!load && insnType.getSort() < argType.getSort()) {
 				throw new AnalyzerException(insn, "Cannot store wider type (" + argType.getDescriptor() +
 						") into narrower type: " + insnType.getDescriptor());
 			}
 			// Don't try to mix primitives and non-primitives
-			if(insnType.getSort() == Type.OBJECT && isPrimitive(argType))
+			if (insnType.getSort() == Type.OBJECT && isPrimitive(argType))
 				throw new AnalyzerException(insn, "Cannot mix primitive value with type-variable instruction");
-			else if(argType.getSort() == Type.OBJECT && isPrimitive(insnType))
+			else if (argType.getSort() == Type.OBJECT && isPrimitive(insnType))
 				throw new AnalyzerException(insn, "Cannot mix type value with primitive-variable instruction");
 		}
 		// If we're operating on a load-instruction we want the return value to
 		// relate to the type of the instruction.
-		if(load && insnType != value.getType())
+		if (load && insnType != value.getType())
 			return newValue(add(value.getInsns(), insn), insnType);
 		// Types match or type is null (so either a store operation)
 		return value.copy(insn);
@@ -455,7 +471,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public AbstractValue unaryOperation(AbstractInsnNode insn, AbstractValue value) throws AnalyzerException {
-		switch(insn.getOpcode()) {
+		switch (insn.getOpcode()) {
 			case INEG:
 				if (isValueUnknown(value))
 					return newValue(add(value.getInsns(), insn), Type.INT_TYPE);
@@ -511,25 +527,25 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				// fall-through intentional, these and table insns both take int
 			case TABLESWITCH:
 			case LOOKUPSWITCH:
-				if (!(isSubTypeOf(typeChecker, value.getType(), Type.INT_TYPE)
-						|| isSubTypeOf(typeChecker, value.getType(), Type.BOOLEAN_TYPE)))
+				if (!(isSubTypeOf(typeResolver, value.getType(), Type.INT_TYPE)
+						|| isSubTypeOf(typeResolver, value.getType(), Type.BOOLEAN_TYPE)))
 					throw new AnalyzerException(insn, "Expected int type.");
 				return null;
 			case IRETURN:
-				if (!(isSubTypeOf(typeChecker, value.getType(), Type.INT_TYPE)
-						|| isSubTypeOf(typeChecker, value.getType(), Type.BOOLEAN_TYPE)))
+				if (!(isSubTypeOf(typeResolver, value.getType(), Type.INT_TYPE)
+						|| isSubTypeOf(typeResolver, value.getType(), Type.BOOLEAN_TYPE)))
 					throw new AnalyzerException(insn, "Expected int return type.");
 				return null;
 			case LRETURN:
-				if (!isSubTypeOf(typeChecker, value.getType(), Type.LONG_TYPE))
+				if (!isSubTypeOf(typeResolver, value.getType(), Type.LONG_TYPE))
 					throw new AnalyzerException(insn, "Expected long return type.");
 				return null;
 			case FRETURN:
-				if (!isSubTypeOf(typeChecker, value.getType(), Type.FLOAT_TYPE))
+				if (!isSubTypeOf(typeResolver, value.getType(), Type.FLOAT_TYPE))
 					throw new AnalyzerException(insn, "Expected float return type.");
 				return null;
 			case DRETURN:
-				if (!isSubTypeOf(typeChecker, value.getType(), Type.DOUBLE_TYPE))
+				if (!isSubTypeOf(typeResolver, value.getType(), Type.DOUBLE_TYPE))
 					throw new AnalyzerException(insn, "Expected double return type.");
 				return null;
 			case ARETURN:
@@ -540,7 +556,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				// Value == item on stack
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type fieldType = Type.getType(fin.desc);
-				if (!isSubTypeOf(typeChecker, value.getType(), fieldType))
+				if (!isSubTypeOf(typeResolver, value.getType(), fieldType))
 					markBad(insn, exceptionFactory.unexpectedType(fieldType, value.getType(), insn, value, TypeMismatchKind.PUTSTATIC));
 				return null;
 			}
@@ -549,14 +565,14 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				// - Check instance context is of the owner class
 				FieldInsnNode fin = (FieldInsnNode) insn;
 				Type ownerType = Type.getObjectType(fin.owner);
-				if (!isSubTypeOf(typeChecker, value.getType(), ownerType))
+				if (!isSubTypeOf(typeResolver, value.getType(), ownerType))
 					markBad(insn, exceptionFactory.unexpectedType(Type.getObjectType(fin.owner),
 							value.getType(), insn, value, TypeMismatchKind.GETFIELD));
 				Type type = Type.getType(fin.desc);
 				return newValue(add(value.getInsns(), insn), type);
 			}
 			case NEWARRAY:
-				switch(((IntInsnNode) insn).operand) {
+				switch (((IntInsnNode) insn).operand) {
 					case T_BOOLEAN:
 						return newValue(add(value.getInsns(), insn), BOOLEAN_ARRAY_TYPE);
 					case T_CHAR:
@@ -610,7 +626,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 	}
 
 	@Override
-	public AbstractValue binaryOperation(AbstractInsnNode insn, AbstractValue value1, AbstractValue value2)  {
+	public AbstractValue binaryOperation(AbstractInsnNode insn, AbstractValue value1, AbstractValue value2) {
 		// Modified from BasicVerifier
 		Type expected1;
 		Type expected2;
@@ -621,7 +637,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 				expected2 = Type.INT_TYPE;
 				break;
 			case BALOAD:
-				if (isSubTypeOf(typeChecker, value1.getType(), BOOLEAN_ARRAY_TYPE)) {
+				if (isSubTypeOf(typeResolver, value1.getType(), BOOLEAN_ARRAY_TYPE)) {
 					expected1 = BOOLEAN_ARRAY_TYPE;
 				} else {
 					expected1 = BYTE_ARRAY_TYPE;
@@ -733,15 +749,15 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			// In the bytecode, we don't have any immediate way to validate against an expected type.
 			// So we shall do nothing :)
 		} else if (value1 != UninitializedValue.UNINITIALIZED_VALUE && value2 != UninitializedValue.UNINITIALIZED_VALUE) {
-			if (!isSubTypeOfOrNull(typeChecker, value1, expected1))
+			if (!isSubTypeOfOrNull(typeResolver, value1, expected1))
 				markBad(insn, new AnalyzerException(insn, "First argument not of expected type", expected1, value1));
-			else if (!isSubTypeOfOrNull(typeChecker, value2, expected2))
+			else if (!isSubTypeOfOrNull(typeResolver, value2, expected2))
 				markBad(insn, new AnalyzerException(insn, "Second argument not of expected type", expected2, value2));
 		} else {
 			markBad(insn, new AnalyzerException(insn, "Cannot act on uninitialized values", expected2, value2));
 		}
 		// Update values for non-primitives
-		switch(insn.getOpcode()) {
+		switch (insn.getOpcode()) {
 			case FALOAD:
 				return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.FLOAT_TYPE);
 			case LALOAD:
@@ -775,7 +791,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// Update values for primitive operations
 		PrimitiveValue p1 = (PrimitiveValue) value1;
 		PrimitiveValue p2 = (PrimitiveValue) value2;
-		switch(insn.getOpcode()) {
+		switch (insn.getOpcode()) {
 			case IADD:
 			case FADD:
 			case LADD:
@@ -829,9 +845,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 					return newValue(combineAdd(value1.getInsns(), value2.getInsns(), insn), Type.INT_TYPE);
 				double v1 = ((Number) value1.getValue()).doubleValue();
 				double v2 = ((Number) value1.getValue()).doubleValue();
-				if(v1 > v2)
+				if (v1 > v2)
 					return PrimitiveValue.ofInt(combineAdd(value1.getInsns(), value2.getInsns(), insn), 1);
-				else if(v1 < v2)
+				else if (v1 < v2)
 					return PrimitiveValue.ofInt(combineAdd(value1.getInsns(), value2.getInsns(), insn), -1);
 				else
 					return PrimitiveValue.ofInt(combineAdd(value1.getInsns(), value2.getInsns(), insn), 0);
@@ -843,16 +859,16 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public AbstractValue ternaryOperation(AbstractInsnNode insn, AbstractValue value1, AbstractValue value2,
-										  AbstractValue value3) {
+	                                      AbstractValue value3) {
 		Type expected1;
 		Type expected3;
-		switch(insn.getOpcode()) {
+		switch (insn.getOpcode()) {
 			case IASTORE:
 				expected1 = INT_ARRAY_TYPE;
 				expected3 = Type.INT_TYPE;
 				break;
 			case BASTORE:
-				if(isSubTypeOf(typeChecker, value1.getType(), BOOLEAN_ARRAY_TYPE)) {
+				if (isSubTypeOf(typeResolver, value1.getType(), BOOLEAN_ARRAY_TYPE)) {
 					expected1 = BOOLEAN_ARRAY_TYPE;
 				} else {
 					expected1 = BYTE_ARRAY_TYPE;
@@ -886,11 +902,11 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			default:
 				throw new AssertionError();
 		}
-		if(!isSubTypeOf(typeChecker, value1.getType(), expected1))
+		if (!isSubTypeOf(typeResolver, value1.getType(), expected1))
 			markBad(insn, new AnalyzerException(insn, "First argument not of expected type", expected1, value1));
-		else if(!Type.INT_TYPE.equals(value2.getType()))
+		else if (!Type.INT_TYPE.equals(value2.getType()))
 			markBad(insn, new AnalyzerException(insn, "Second argument not an integer", BasicValue.INT_VALUE, value2));
-		else if(!isSubTypeOf(typeChecker, value3.getType(), expected3))
+		else if (!isSubTypeOf(typeResolver, value3.getType(), expected3))
 			markBad(insn, new AnalyzerException(insn, "Second argument not of expected type", expected3, value3));
 		return null;
 	}
@@ -919,19 +935,19 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		// From BasicVerifier
 		int i = 0;
 		int j = 0;
-		if(opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
+		if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
 			MethodInsnNode min = ((MethodInsnNode) insn);
 			Type owner = Type.getObjectType(min.owner);
 			AbstractValue actual = values.get(i++);
-			if(!isSubTypeOf(typeChecker, actual.getType(), owner) &&
+			if (!isSubTypeOf(typeResolver, actual.getType(), owner) &&
 					!(isMethodAddSuppressed(min) && actual instanceof NullConstantValue))
 				markBad(insn, exceptionFactory.unexpectedMethodHostType(owner, actual.getType(),
 						(MethodInsnNode) insn, actual, values, TypeMismatchKind.INVOKE_HOST_TYPE));
 		}
-		while(i < values.size()) {
+		while (i < values.size()) {
 			Type expected = args[j++];
 			AbstractValue actual = values.get(i++);
-			if(!isSubTypeOfOrNull(typeChecker, actual, expected)) {
+			if (!isSubTypeOfOrNull(typeResolver, actual, expected)) {
 				markBad(insn, exceptionFactory.unexpectedMethodArgType(expected, actual.getType(),
 						insn, actual, values, j - 1, TypeMismatchKind.INVOKE_ARG_TYPE));
 			}
@@ -944,14 +960,16 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		} else if (opcode == INVOKESTATIC) {
 			// Attempt to create simulated value
 			MethodInsnNode min = (MethodInsnNode) insn;
-			try {
-				AbstractValue value = ReflectionSimulatedValue.ofStaticInvoke(staticInvokeFactory, min, values, typeChecker);
-				if (value != null) {
-					value.addContributing(disjoint(argContributingInsns, value.getInsns()));
-					return value;
+			if (useReflectionSimulation) {
+				try {
+					AbstractValue value = ReflectionSimulatedValue.ofStaticInvoke(staticInvokeFactory, min, values, typeResolver);
+					if (value != null) {
+						value.addContributing(disjoint(argContributingInsns, value.getInsns()));
+						return value;
+					}
+				} catch (SimFailedException ex) {
+					// Do nothing for simulation failing, this is expected in MOST cases.
 				}
-			} catch(SimFailedException ex) {
-				// Do nothing for simulation failing, this is expected in MOST cases.
 			}
 			// Fallback to virtual value
 			Type retType = Type.getReturnType(((MethodInsnNode) insn).desc);
@@ -994,7 +1012,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			}
 			if (ownerValue instanceof VirtualValue) {
 				VirtualValue virtualOwner = (VirtualValue) ownerValue;
-				AbstractValue refValue = virtualOwner.ofMethodRef(insn, typeChecker, Type.getMethodType(((MethodInsnNode) insn).desc));
+				AbstractValue refValue = virtualOwner.ofMethodRef(insn, typeResolver, Type.getMethodType(((MethodInsnNode) insn).desc));
 				if (refValue != null) {
 					refValue.addContributing(disjoint(argContributingInsns, refValue.getInsns()));
 				}
@@ -1014,7 +1032,7 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 
 	@Override
 	public void returnOperation(AbstractInsnNode insn, AbstractValue value, AbstractValue expected) {
-		if(!isSubTypeOfOrNull(typeChecker, value, expected))
+		if (!isSubTypeOfOrNull(typeResolver, value, expected))
 			markBad(insn, exceptionFactory.unexpectedType(expected.getType(), value.getType(), insn, value, TypeMismatchKind.RETURN));
 	}
 
@@ -1033,9 +1051,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 		List<AbstractInsnNode> merged =
 				distinct(combine(value1.getInsns(), value2.getInsns()));
 		if (value2 instanceof NullConstantValue)
-			return value1.isNull() ? AbstractValue.ofDefault(null, typeChecker, value1.getType()) : newValue(merged, value1.getType());
+			return value1.isNull() ? AbstractValue.ofDefault(null, typeResolver, value1.getType()) : newValue(merged, value1.getType());
 		else if (value1 instanceof NullConstantValue)
-			return value2.isNull() ? AbstractValue.ofDefault(null, typeChecker, value2.getType()) : newValue(merged, value2.getType());
+			return value2.isNull() ? AbstractValue.ofDefault(null, typeResolver, value2.getType()) : newValue(merged, value2.getType());
 		// Check standard merge
 		if (value1.canMerge(value2))
 			return newValue(merged, value1.getType());
@@ -1043,9 +1061,9 @@ public class SimInterpreter extends Interpreter<AbstractValue> {
 			return newValue(merged, value2.getType());
 		// Check if exception values
 		if (value1 instanceof ExceptionValue && value2 instanceof ExceptionValue)
-			return ExceptionValue.ofHandledException(merged.get(0), typeChecker,
+			return ExceptionValue.ofHandledException(merged.get(0), typeResolver,
 					typeResolver.commonException(value1.getType(), value2.getType()));
-		// Check if virtual values
+			// Check if virtual values
 		else if (value1 instanceof VirtualValue && value2 instanceof VirtualValue)
 			return newValue(merged, typeResolver.common(value1.getType(), value2.getType()));
 		// Unhandled case is likely unmerge-able

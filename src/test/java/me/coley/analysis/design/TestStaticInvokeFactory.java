@@ -17,7 +17,8 @@ import org.objectweb.asm.tree.analysis.Frame;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestStaticInvokeFactory extends TestUtils {
 	@Test
@@ -36,7 +37,9 @@ public class TestStaticInvokeFactory extends TestUtils {
 	public void testUsesCustomValue() throws AnalyzerException {
 		ClassNode node = getFromName("bin/javac/HelloWorld.class");
 		MethodNode mn = getMethod(node, "helloFromGet");
-		SimAnalyzer analyzer = new SimAnalyzer(new SimInterpreter()) {
+		SimInterpreter interpreter = new SimInterpreter();
+		interpreter.setUseReflectionSimulation(true);
+		SimAnalyzer analyzer = new SimAnalyzer(interpreter) {
 			@Override
 			protected StaticInvokeFactory createStaticInvokeFactory() {
 				return new StaticInvokeFactoryTestImpl();
